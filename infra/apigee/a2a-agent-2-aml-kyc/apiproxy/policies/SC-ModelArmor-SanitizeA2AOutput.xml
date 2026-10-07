@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ServiceCallout async="false" continueOnError="true" enabled="true" name="SC-ModelArmor-SanitizeA2AOutput">
+    <DisplayName>SC-ModelArmor-SanitizeA2AOutput</DisplayName>
+    <Request clearPayload="true" variable="armorA2AOutputReq">
+        <Set>
+            <Headers>
+                <Header name="Content-Type">application/json</Header>
+            </Headers>
+            <Payload contentType="application/json">{
+  "modelResponseData": {
+    "text": "A2A Artifact Output Inspection"
+  }
+}</Payload>
+            <Verb>POST</Verb>
+        </Set>
+        <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+    </Request>
+    <Response>armorA2AOutputResp</Response>
+    <HTTPTargetConnection>
+        <URL>https://modelarmor.europe-west1.rep.googleapis.com/v1/projects/cvisco-agentic-demo/locations/europe-west1/templates/fsi-agent-armor-strict:sanitizeModelResponse</URL>
+        <Authentication>
+            <GoogleAccessToken>
+                <Scopes>
+                    <Scope>https://www.googleapis.com/auth/cloud-platform</Scope>
+                </Scopes>
+            </GoogleAccessToken>
+        </Authentication>
+    </HTTPTargetConnection>
+</ServiceCallout>

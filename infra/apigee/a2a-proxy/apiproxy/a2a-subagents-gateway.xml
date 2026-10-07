@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<APIProxy revision="1" name="a2a-subagents-gateway">
+    <DisplayName>A2A Sub-Agents Mesh Gateway (Agent 1 Tx Risk &amp; Agent 2 AML/KYC)</DisplayName>
+    <Description>Apigee X East-West A2A Protocol Gateway mediating Agent Card discovery (/.well-known/agent.json) and JSON-RPC task execution (tasks/send) between Gemini Enterprise Root Orchestrator and the 2 specialized FSI Sub-Agents.</Description>
+    <BasePaths>/v1/a2a</BasePaths>
+    <Policies>
+        <Policy>SA-A2A-Mesh-RateLimit</Policy>
+        <Policy>AM-InjectA2ATraceHeaders</Policy>
+    </Policies>
+    <ProxyEndpoints>
+        <ProxyEndpoint>default</ProxyEndpoint>
+    </ProxyEndpoints>
+    <TargetEndpoints>
+        <TargetEndpoint>a2a-subagents-cloudrun</TargetEndpoint>
+    </TargetEndpoints>
+</APIProxy>

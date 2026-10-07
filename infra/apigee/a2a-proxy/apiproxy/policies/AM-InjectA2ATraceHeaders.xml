@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<AssignMessage async="false" continueOnError="false" enabled="true" name="AM-InjectA2ATraceHeaders">
+    <DisplayName>AM-InjectA2ATraceHeaders</DisplayName>
+    <Set>
+        <Headers>
+            <Header name="X-A2A-Protocol-Version">0.3.0</Header>
+            <Header name="X-Apigee-A2A-Mesh">cvisco-agentic-demo</Header>
+        </Headers>
+    </Set>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</AssignMessage>

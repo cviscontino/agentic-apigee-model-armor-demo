@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<AssignMessage async="false" continueOnError="false" enabled="true" name="AM-SetBigQueryMCPHeaders">
+    <DisplayName>AM-SetBigQueryMCPHeaders</DisplayName>
+    <Set>
+        <Headers>
+            <Header name="x-goog-user-project">cvisco-agentic-demo</Header>
+            <Header name="X-Apigee-MCP-Server">bigquery.googleapis.com/mcp</Header>
+            <Header name="X-Apigee-MCP-Tool">{mcp.toolName}</Header>
+        </Headers>
+    </Set>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</AssignMessage>

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ProxyEndpoint name="default">
+    <Description>Apigee AI Gateway mediating Gemini Enterprise Multi-Agent with Model Armor &amp; OOTB LLMTokenQuota per User</Description>
+    <PreFlow name="PreFlow">
+        <Request>
+            <Step>
+                <Name>VA-VerifyApiKey</Name>
+                <Condition>request.queryparam.apikey != null</Condition>
+            </Step>
+            <Step>
+                <Name>SA-SpikeArrest-Burst</Name>
+            </Step>
+            <Step>
+                <Name>EV-ExtractUserPrompt</Name>
+                <Condition>request.verb == "POST"</Condition>
+            </Step>
+            <Step>
+                <Name>Q-TokenQuota-Enforce</Name>
+                <Condition>request.verb == "POST"</Condition>
+            </Step>
+            <Step>
+                <Name>SC-ModelArmor-SanitizeInput</Name>
+                <Condition>request.verb == "POST"</Condition>
+            </Step>
+            <Step>
+                <Name>EV-ExtractModelArmorVerdict</Name>
+                <Condition>request.verb == "POST"</Condition>
+            </Step>
+            <Step>
+                <Name>RF-ModelArmorBlocked</Name>
+                <Condition>(request.verb == "POST") and (modelArmor.filterMatchState == "MATCH_FOUND")</Condition>
+            </Step>
+        </Request>
+        <Response>
+            <Step>
+                <Name>SC-ModelArmor-SanitizeOutput</Name>
+                <Condition>request.verb == "POST"</Condition>
+            </Step>
+            <Step>
+                <Name>AM-InjectTelemetryHeaders</Name>
+            </Step>
+        </Response>
+    </PreFlow>
+    <HTTPProxyConnection>
+        <BasePath>/v1/agentic-fsi</BasePath>
+    </HTTPProxyConnection>
+    <RouteRule name="gemini-enterprise-route"/>
+</ProxyEndpoint>

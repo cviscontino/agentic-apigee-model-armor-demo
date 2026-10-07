@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ExtractVariables async="false" continueOnError="true" enabled="true" name="EV-ExtractMCPMethodAndTool">
+    <DisplayName>EV-ExtractMCPMethodAndTool</DisplayName>
+    <Source clearPayload="false">request</Source>
+    <JSONPayload>
+        <Variable name="mcp.method">
+            <JSONPath>$.method</JSONPath>
+        </Variable>
+        <Variable name="mcp.toolName">
+            <JSONPath>$.params.name</JSONPath>
+        </Variable>
+        <Variable name="mcp.sqlQuery">
+            <JSONPath>$.params.arguments.query</JSONPath>
+        </Variable>
+    </JSONPayload>
+</ExtractVariables>

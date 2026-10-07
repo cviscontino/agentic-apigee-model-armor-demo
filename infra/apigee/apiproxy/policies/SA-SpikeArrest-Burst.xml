@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<SpikeArrest async="false" continueOnError="false" enabled="true" name="SA-SpikeArrest-Burst">
+    <DisplayName>SA-SpikeArrest-Burst</DisplayName>
+    <Identifier ref="request.header.x-client-app-id"/>
+    <!-- Protects Gemini Enterprise & BigQuery MCP from sudden concurrency spikes -->
+    <Rate>15pm</Rate>
+    <UseEffectiveCount>true</UseEffectiveCount>
+</SpikeArrest>

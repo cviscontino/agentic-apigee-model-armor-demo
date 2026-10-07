@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<TargetEndpoint name="gemini-enterprise-agent">
+    <Description>Routes sanitized prompts to Gemini Enterprise Multi-Agent Orchestrator endpoint on Cloud Run</Description>
+    <HTTPTargetConnection>
+        <URL>https://agentic-fsi-demo-1070899805958.europe-west1.run.app/.well-known/agent.json</URL>
+    </HTTPTargetConnection>
+</TargetEndpoint>

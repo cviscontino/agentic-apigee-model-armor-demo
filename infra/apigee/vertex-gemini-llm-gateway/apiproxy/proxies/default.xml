@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ProxyEndpoint name="default">
+    <Description>Apigee X AI Proxy for Vertex AI Gemini with OOTB LLMTokenQuota for admin@cviscontino.altostrat.com</Description>
+    <PreFlow name="PreFlow">
+        <Request>
+            <Step>
+                <Name>VA-VerifyApiKey</Name>
+                <Condition>request.queryparam.apikey != null</Condition>
+            </Step>
+            <Step>
+                <Name>EV-ExtractUserIdentity</Name>
+            </Step>
+            <Step>
+                <Name>Q-TokenQuota-Enforce</Name>
+            </Step>
+            <Step>
+                <Name>SC-ModelArmor-SanitizeInput</Name>
+            </Step>
+        </Request>
+        <Response>
+            <Step>
+                <Name>Q-TokenQuota-Count</Name>
+            </Step>
+            <Step>
+                <Name>AM-InjectGeminiQuotaHeaders</Name>
+            </Step>
+        </Response>
+    </PreFlow>
+    <Flows/>
+    <PostFlow name="PostFlow">
+        <Request/>
+        <Response/>
+    </PostFlow>
+    <HTTPProxyConnection>
+        <BasePath>/v1/llm/gemini</BasePath>
+    </HTTPProxyConnection>
+    <RouteRule name="default">
+        <TargetEndpoint>vertex-ai-gemini-target</TargetEndpoint>
+    </RouteRule>
+</ProxyEndpoint>

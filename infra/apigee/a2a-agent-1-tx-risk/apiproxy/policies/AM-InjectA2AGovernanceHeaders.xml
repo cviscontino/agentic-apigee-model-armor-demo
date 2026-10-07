@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<AssignMessage async="false" continueOnError="false" enabled="true" name="AM-InjectA2AGovernanceHeaders">
+    <DisplayName>AM-InjectA2AGovernanceHeaders</DisplayName>
+    <Set>
+        <Headers>
+            <Header name="Content-Type">application/json</Header>
+            <Header name="X-Apigee-A2A-Proxy">a2a-agent-1-tx-risk</Header>
+            <Header name="X-Apigee-A2A-Target">agent-1-tx-risk-analytics</Header>
+            <Header name="X-Model-Armor-A2A-Verdict">{modelarmor.filterMatchState}</Header>
+        </Headers>
+        <Payload contentType="application/json">{
+  "jsonrpc": "2.0",
+  "id": "a2a-mediated",
+  "result": {
+    "status": "APIGEE_A2A_MODEL_ARMOR_APPROVED",
+    "proxy": "a2a-agent-1-tx-risk",
+    "targetAgent": "agent-1-tx-risk-analytics",
+    "modelArmorVerdict": "{modelarmor.filterMatchState}"
+  }
+}</Payload>
+        <StatusCode>200</StatusCode>
+    </Set>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</AssignMessage>

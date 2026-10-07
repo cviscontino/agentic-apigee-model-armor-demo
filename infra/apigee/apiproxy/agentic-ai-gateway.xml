@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<APIProxy revision="2" name="agentic-ai-gateway">
+    <DisplayName>Agentic AI Gateway (Model Armor + OOTB LLMTokenQuota + Gemini Enterprise + A2A + BQ MCP)</DisplayName>
+    <Description>Apigee X AI Gateway mediating calls to Gemini Enterprise Multi-Agent with Out-of-the-Box LLMTokenQuota (admin@cviscontino.altostrat.com), Google Cloud Model Armor, and SpikeArrest</Description>
+    <BasePaths>/v1/agentic-fsi</BasePaths>
+    <Policies>
+        <Policy>VA-VerifyApiKey</Policy>
+        <Policy>SA-SpikeArrest-Burst</Policy>
+        <Policy>Q-TokenQuota-Enforce</Policy>
+        <Policy>Q-TokenQuota-Count</Policy>
+        <Policy>EV-ExtractUserPrompt</Policy>
+        <Policy>SC-ModelArmor-SanitizeInput</Policy>
+        <Policy>EV-ExtractModelArmorVerdict</Policy>
+        <Policy>RF-ModelArmorBlocked</Policy>
+        <Policy>SC-ModelArmor-SanitizeOutput</Policy>
+        <Policy>AM-InjectTelemetryHeaders</Policy>
+    </Policies>
+    <ProxyEndpoints>
+        <ProxyEndpoint>default</ProxyEndpoint>
+    </ProxyEndpoints>
+    <TargetEndpoints>
+        <TargetEndpoint>gemini-enterprise-agent</TargetEndpoint>
+    </TargetEndpoints>
+</APIProxy>

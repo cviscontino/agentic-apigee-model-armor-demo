@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ExtractVariables async="false" continueOnError="true" enabled="true" name="EV-ExtractUserPrompt">
+    <DisplayName>EV-ExtractUserPrompt</DisplayName>
+    <Source clearPayload="false">request</Source>
+    <QueryParam name="user_email">
+        <Pattern ignoreCase="true">{userEmail}</Pattern>
+    </QueryParam>
+    <QueryParam name="token_limit">
+        <Pattern ignoreCase="true">{tokenLimit}</Pattern>
+    </QueryParam>
+    <JSONPayload>
+        <Variable name="userPrompt" type="string">
+            <JSONPath>$.prompt</JSONPath>
+        </Variable>
+        <Variable name="userEmail" type="string">
+            <JSONPath>$.user_email</JSONPath>
+        </Variable>
+    </JSONPayload>
+    <VariablePrefix>extracted</VariablePrefix>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</ExtractVariables>

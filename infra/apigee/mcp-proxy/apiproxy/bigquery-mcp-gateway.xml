@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<APIProxy revision="1" name="bigquery-mcp-gateway">
+    <DisplayName>BigQuery MCP Server Gateway (Model Context Protocol + Model Armor)</DisplayName>
+    <Description>Apigee X MCP Gateway mediating JSON-RPC 2.0 calls (tools/list, tools/call: execute_sql_readonly, get_table_info, list_table_ids) from A2A Sub-Agents to Google Cloud BigQuery Remote MCP Server (https://bigquery.googleapis.com/mcp)</Description>
+    <BasePaths>/v1/mcp/bigquery</BasePaths>
+    <Policies>
+        <Policy>SA-MCP-RateLimit</Policy>
+        <Policy>EV-ExtractMCPMethodAndTool</Policy>
+        <Policy>RF-BlockMutatingMCPTool</Policy>
+        <Policy>SC-ModelArmor-InspectSQL</Policy>
+        <Policy>AM-SetBigQueryMCPHeaders</Policy>
+    </Policies>
+    <ProxyEndpoints>
+        <ProxyEndpoint>default</ProxyEndpoint>
+    </ProxyEndpoints>
+    <TargetEndpoints>
+        <TargetEndpoint>bigquery-remote-mcp</TargetEndpoint>
+    </TargetEndpoints>
+</APIProxy>

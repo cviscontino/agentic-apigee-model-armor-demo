@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<RaiseFault async="false" continueOnError="false" enabled="true" name="RF-BlockMutatingMCPTool">
+    <DisplayName>RF-BlockMutatingMCPTool</DisplayName>
+    <FaultResponse>
+        <Set>
+            <StatusCode>403</StatusCode>
+            <ReasonPhrase>Forbidden by Apigee MCP Tool Governance</ReasonPhrase>
+            <Payload contentType="application/json">{
+  "jsonrpc": "2.0",
+  "error": {
+    "code": -32600,
+    "message": "Blocked by Apigee X MCP Gateway: Only read-only BigQuery MCP tools (execute_sql_readonly, get_table_info, list_table_ids, list_dataset_ids) are permitted for A2A Sub-Agents.",
+    "data": {
+      "attempted_tool": "{mcp.toolName}",
+      "policy": "RF-BlockMutatingMCPTool"
+    }
+  }
+}</Payload>
+        </Set>
+    </FaultResponse>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</RaiseFault>

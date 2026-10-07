@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<SpikeArrest async="false" continueOnError="false" enabled="true" name="SA-A2A-Mesh-RateLimit">
+    <DisplayName>SA-A2A-Mesh-RateLimit</DisplayName>
+    <Rate>60pm</Rate>
+    <UseEffectiveCount>true</UseEffectiveCount>
+</SpikeArrest>

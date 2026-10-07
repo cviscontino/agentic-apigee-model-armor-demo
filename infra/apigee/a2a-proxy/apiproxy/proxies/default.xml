@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ProxyEndpoint name="default">
+    <Description>A2A Protocol Proxy Endpoint for Agent 1 and Agent 2</Description>
+    <PreFlow name="PreFlow">
+        <Request>
+            <Step>
+                <Name>SA-A2A-Mesh-RateLimit</Name>
+            </Step>
+            <Step>
+                <Name>AM-InjectA2ATraceHeaders</Name>
+            </Step>
+        </Request>
+        <Response/>
+    </PreFlow>
+    <HTTPProxyConnection>
+        <BasePath>/v1/a2a</BasePath>
+    </HTTPProxyConnection>
+    <RouteRule name="route-to-a2a-subagents">
+        <TargetEndpoint>a2a-subagents-cloudrun</TargetEndpoint>
+    </RouteRule>
+</ProxyEndpoint>

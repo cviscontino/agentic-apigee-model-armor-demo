@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<RaiseFault async="false" continueOnError="false" enabled="true" name="RF-ModelArmorBlockedA2A">
+    <DisplayName>RF-ModelArmorBlockedA2A</DisplayName>
+    <FaultResponse>
+        <Set>
+            <StatusCode>403</StatusCode>
+            <ReasonPhrase>Blocked by Apigee + Cloud Model Armor on A2A Hop</ReasonPhrase>
+            <Payload contentType="application/json">{
+  "jsonrpc": "2.0",
+  "error": {
+    "code": -32001,
+    "message": "A2A task to agent-1-tx-risk-analytics blocked by Cloud Model Armor (fsi-agent-armor-strict)",
+    "data": {
+      "verdict": "{modelarmor.filterMatchState}",
+      "proxy": "a2a-agent-1-tx-risk"
+    }
+  }
+}</Payload>
+        </Set>
+    </FaultResponse>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</RaiseFault>

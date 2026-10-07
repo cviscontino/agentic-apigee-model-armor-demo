@@ -1,0 +1,2071 @@
+<!DOCTYPE html>
+<html lang="it" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GCP Agentic Architecture Demo — Apigee • Model Armor • Gemini Enterprise • A2A • BigQuery MCP</title>
+  <!-- Google Fonts: DM Sans & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..800;1,9..40,400..700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"DM Sans"', 'Inter', 'system-ui', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+        },
+      },
+    };
+  </script>
+  <!-- React 18, Babel, Apache ECharts, Lucide Icons -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body {
+      font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+    }
+    code, pre, .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    /* Custom subtle scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(113, 113, 122, 0.35);
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(113, 113, 122, 0.6);
+    }
+  </style>
+</head>
+<body class="bg-zinc-50 dark:bg-[#09090b] text-zinc-950 dark:text-zinc-50 min-h-screen transition-colors duration-200">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo, useRef, useCallback } = React;
+
+    const CHART_COLORS = [
+      "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6",
+      "#ec4899", "#06b6d4", "#84cc16", "#f97316", "#6366f1"
+    ];
+
+    function formatDateReadable(isoStr) {
+      if (!isoStr) return "—";
+      try {
+        const d = new Date(isoStr);
+        if (isNaN(d.getTime())) return isoStr;
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const m = months[d.getUTCMonth()];
+        const day = String(d.getUTCDate()).padStart(2, "0");
+        const yr = d.getUTCFullYear();
+        const hh = String(d.getUTCHours()).padStart(2, "0");
+        const mm = String(d.getUTCMinutes()).padStart(2, "0");
+        return `${m} ${day}, ${yr} ${hh}:${mm}`;
+      } catch {
+        return isoStr;
+      }
+    }
+
+    function formatEur(val) {
+      const n = Number(val || 0);
+      return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
+    }
+
+    // Reusable ECharts Wrapper Component
+    function EChartBox({ option, height = "340px", isDark }) {
+      const chartRef = useRef(null);
+      const instanceRef = useRef(null);
+
+      useEffect(() => {
+        if (!chartRef.current) return;
+        if (instanceRef.current) {
+          instanceRef.current.dispose();
+        }
+        const chart = echarts.init(chartRef.current, isDark ? "dark" : null, { renderer: "canvas" });
+        instanceRef.current = chart;
+        chart.setOption({
+          backgroundColor: "transparent",
+          ...option,
+        });
+
+        const handleResize = () => chart && chart.resize();
+        window.addEventListener("resize", handleResize);
+        return () => {
+          window.removeEventListener("resize", handleResize);
+          chart.dispose();
+        };
+      }, [option, isDark]);
+
+      return <div ref={chartRef} style={{ width: "100%", height }} />;
+    }
+
+    // SVG Icon Helper
+    function Icon({ name, className = "w-4 h-4" }) {
+      const paths = {
+        shield: <><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></>,
+        shieldAlert: <><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="M12 8v4"/><path d="M12 16h.01"/></>,
+        shieldCheck: <><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></>,
+        cpu: <><rect width="16" height="16" x="4" y="4" rx="2"/><rect width="6" height="6" x="9" y="9" rx="1"/><path d="M15 2v2"/><path d="M15 20v2"/><path d="M2 15h2"/><path d="M2 9h2"/><path d="M20 15h2"/><path d="M20 9h2"/><path d="M9 2v2"/><path d="M9 20v2"/></>,
+        database: <><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></>,
+        zap: <><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></>,
+        network: <><rect x="16" y="16" width="6" height="6" rx="1"/><rect x="2" y="16" width="6" height="6" rx="1"/><rect x="9" y="2" width="6" height="6" rx="1"/><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"/><path d="M12 12V8"/></>,
+        play: <><polygon points="6 3 20 12 6 21 6 3"/></>,
+        sun: <><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></>,
+        moon: <><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></>,
+        trendUp: <><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></>,
+        trendDown: <><polyline points="22 17 13.5 8.5 8.5 13.5 2 7"/><polyline points="16 17 22 17 22 11"/></>,
+        x: <><path d="M18 6 6 18"/><path d="m6 6 12 12"/></>,
+        chevronsLeft: <><path d="m11 17-5-5 5-5"/><path d="m18 17-5-5 5-5"/></>,
+        chevronLeft: <><path d="m15 18-6-6 6-6"/></>,
+        chevronRight: <><path d="m9 18 6-6-6-6"/></>,
+        chevronsRight: <><path d="m6 17 5-5-5-5"/><path d="m13 17 5-5-5-5"/></>,
+        filter: <><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></>,
+        settings: <><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></>,
+        terminal: <><polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/></>,
+        checkCircle: <><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></>,
+        alertTriangle: <><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></>,
+        refresh: <><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></>,
+      };
+      return (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className={className}
+        >
+          {paths[name] || paths.shield}
+        </svg>
+      );
+    }
+
+    function App() {
+      const [isDark, setIsDark] = useState(true);
+      const [scenarios, setScenarios] = useState([]);
+      const [transactions, setTransactions] = useState([]);
+      const [gatewayMetrics, setGatewayMetrics] = useState({
+        total_requests: 14,
+        allowed_requests: 9,
+        blocked_model_armor: 3,
+        throttled_apigee_429: 2,
+        semantic_cache_hits: 2,
+        a2a_tasks_dispatched: 18,
+        bq_mcp_queries_executed: 18,
+        tokens_consumed: 6420,
+      });
+      const [gatewayConfig, setGatewayConfig] = useState({
+        authenticated_user: "admin@cviscontino.altostrat.com",
+        spike_arrest_rpm: 15,
+        token_quota_per_min: 1500,
+        semantic_cache_enabled: true,
+        sdp_mask_iban_output: true,
+        apigee_endpoint: "https://api.cvisco-agentic-demo.internal/v1/agentic-fsi (PSC 10.10.0.50)",
+        model_armor_template: "projects/cvisco-agentic-demo/locations/europe-west1/templates/fsi-agent-armor-strict",
+      });
+      const [userTokenQuota, setUserTokenQuota] = useState({
+        policy_type: "LLMTokenQuota (Apigee Out-of-the-Box AI Policy)",
+        enforce_policy: "Q-TokenQuota-Enforce (EnforceOnly=true)",
+        count_policy: "Q-TokenQuota-Count (CountOnly=true)",
+        shared_counter: "user-gemini-token-counter",
+        identifier_ref: "extracted.userEmail",
+        identifier_value: "admin@cviscontino.altostrat.com",
+        token_usage_source: "$.usageMetadata.totalTokenCount",
+        allowed_tokens: 1500,
+        used_tokens: 0,
+        available_tokens: 1500,
+        prompt_tokens_window: 0,
+        candidates_tokens_window: 0,
+        calls_in_window: 0,
+        reset_in_seconds: 60,
+        quota_exceeded: false,
+      });
+
+      // Active Simulator Controls
+      const [activeModeTab, setActiveModeTab] = useState("VALID_A2A_MCP"); // VALID_A2A_MCP | MODEL_ARMOR_BLOCKED | STRESS_TEST
+      const [selectedScenarioId, setSelectedScenarioId] = useState("valid_aml_structuring");
+      const [customPrompt, setCustomPrompt] = useState(
+        "Analizza le transazioni SWIFT ad alto rischio (>85) con sospetto Cross-Border Structuring e incrocia i risultati con lo stato PEP, screening OFAC e alert EU AMLD6 dei clienti su BigQuery."
+      );
+      const [bypassCache, setBypassCache] = useState(false);
+      const [isInvoking, setIsInvoking] = useState(false);
+      const [lastTrace, setLastTrace] = useState(null);
+      const [activeInspectorTab, setActiveInspectorTab] = useState("ge_synthesis"); // ge_synthesis | gemini_quota | model_armor | a2a_jsonrpc | bq_mcp
+
+      // Stress Test Controls & Results
+      const [stressTotalReq, setStressTotalReq] = useState(24);
+      const [stressConcurrency, setStressConcurrency] = useState(8);
+      const [stressSpikeLimit, setStressSpikeLimit] = useState(15);
+      const [stressProfile, setStressProfile] = useState("mixed_realistic");
+      const [isRunningStress, setIsRunningStress] = useState(false);
+      const [stressResult, setStressResult] = useState(null);
+
+      // Table Filtering, Selection & Pagination
+      const [statusFilter, setStatusFilter] = useState("ALL");
+      const [channelFilter, setChannelFilter] = useState("ALL");
+      const [typologyFilter, setTypologyFilter] = useState("ALL");
+      const [openDropdown, setOpenDropdown] = useState(null); // "status" | "channel" | "typology" | null
+      const [selectedTx, setSelectedTx] = useState(null);
+      const [currentPage, setCurrentPage] = useState(1);
+      const pageSize = 6;
+      const [isActionLoading, setIsActionLoading] = useState(false);
+
+      // Modal for Gateway & A2A AgentCard inspection
+      const [showSettingsModal, setShowSettingsModal] = useState(false);
+      const [agentCardModal, setAgentCardModal] = useState(null);
+
+      // Toggle Dark Mode on HTML root
+      useEffect(() => {
+        const root = document.documentElement;
+        if (isDark) {
+          root.classList.add("dark");
+        } else {
+          root.classList.remove("dark");
+        }
+      }, [isDark]);
+
+      const loadInitialData = useCallback(async (forceRefresh = false) => {
+        try {
+          const [scenRes, bqRes] = await Promise.all([
+            fetch("/api/scenarios").then((r) => r.json()),
+            fetch(`/api/bq/dashboard?refresh=${forceRefresh}`).then((r) => r.json()),
+          ]);
+          if (scenRes.scenarios) setScenarios(scenRes.scenarios);
+          if (scenRes.user_token_quota) setUserTokenQuota(scenRes.user_token_quota);
+          if (bqRes.transactions) setTransactions(bqRes.transactions);
+          if (bqRes.gateway_metrics) setGatewayMetrics(bqRes.gateway_metrics);
+          if (bqRes.gateway_config) setGatewayConfig(bqRes.gateway_config);
+          if (bqRes.user_token_quota) setUserTokenQuota(bqRes.user_token_quota);
+        } catch (err) {
+          console.error("Failed loading initial data:", err);
+        }
+      }, []);
+
+      useEffect(() => {
+        loadInitialData(false);
+      }, [loadInitialData]);
+
+      // Automatically run an initial valid call so the trace inspector is populated on first view
+      useEffect(() => {
+        const timer = setTimeout(() => {
+          handleInvokeGateway(
+            "Analizza le transazioni SWIFT ad alto rischio (>85) con sospetto Cross-Border Structuring e incrocia i risultati con lo stato PEP, screening OFAC e alert EU AMLD6 dei clienti su BigQuery.",
+            "valid_aml_structuring",
+            null
+          );
+        }, 300);
+        return () => clearTimeout(timer);
+      }, []);
+
+      const handleSelectScenario = (sc) => {
+        setSelectedScenarioId(sc.id);
+        setCustomPrompt(sc.prompt);
+      };
+
+      const handleResetTokenQuota = async () => {
+        try {
+          const res = await fetch("/api/gateway/reset-quota", { method: "POST" });
+          const data = await res.json();
+          if (data.user_token_quota) setUserTokenQuota(data.user_token_quota);
+        } catch (err) {
+          console.error("Reset token quota error:", err);
+        }
+      };
+
+      const handleUpdateTokenLimitQuick = async (newLimit) => {
+        const lim = Math.max(100, Number(newLimit) || 1500);
+        setGatewayConfig((prev) => ({ ...prev, token_quota_per_min: lim }));
+        try {
+          const res = await fetch("/api/gateway/config", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token_quota_per_min: lim }),
+          });
+          const data = await res.json();
+          if (data.config) setGatewayConfig(data.config);
+          if (data.user_token_quota) setUserTokenQuota(data.user_token_quota);
+        } catch (err) {
+          console.error("Update token limit error:", err);
+        }
+      };
+
+      const handleInvokeGateway = async (promptOverride, scenarioIdOverride, customerFilterOverride, bypassCacheOverride) => {
+        const promptToUse = promptOverride !== undefined ? promptOverride : customPrompt;
+        if (!promptToUse.trim()) return;
+        setIsInvoking(true);
+        try {
+          const matchedScenario = scenarios.find((s) => s.id === (scenarioIdOverride || selectedScenarioId));
+          const res = await fetch("/api/gateway/invoke", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              prompt: promptToUse,
+              scenario_id: scenarioIdOverride || selectedScenarioId,
+              user_email: gatewayConfig.authenticated_user || "admin@cviscontino.altostrat.com",
+              customer_filter: customerFilterOverride !== undefined ? customerFilterOverride : (matchedScenario?.customer_filter || null),
+              bypass_cache: bypassCacheOverride !== undefined ? bypassCacheOverride : bypassCache,
+            }),
+          });
+          const data = await res.json();
+          setLastTrace(data);
+          if (data.user_token_quota) setUserTokenQuota(data.user_token_quota);
+          if (data.verdict === "MODEL_ARMOR_BLOCKED") {
+            setActiveInspectorTab("model_armor");
+          } else if (data.verdict === "APIGEE_LLM_TOKEN_QUOTA_429") {
+            setActiveInspectorTab("gemini_quota");
+          } else {
+            setActiveInspectorTab("ge_synthesis");
+          }
+          // Refresh metrics
+          const scenRes = await fetch("/api/scenarios").then((r) => r.json());
+          if (scenRes.gateway_metrics) setGatewayMetrics(scenRes.gateway_metrics);
+          if (scenRes.user_token_quota) setUserTokenQuota(scenRes.user_token_quota);
+        } catch (err) {
+          console.error("Gateway invoke error:", err);
+        } finally {
+          setIsInvoking(false);
+        }
+      };
+
+      const handleRunStressTest = async () => {
+        setIsRunningStress(true);
+        try {
+          const res = await fetch("/api/gateway/stress-test", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              total_requests: Number(stressTotalReq),
+              concurrency: Number(stressConcurrency),
+              spike_arrest_limit_rpm: Number(stressSpikeLimit),
+              traffic_profile: stressProfile,
+            }),
+          });
+          const data = await res.json();
+          setStressResult(data);
+          if (data.gateway_metrics) setGatewayMetrics(data.gateway_metrics);
+          if (data.user_token_quota) setUserTokenQuota(data.user_token_quota);
+        } catch (err) {
+          console.error("Stress test error:", err);
+        } finally {
+          setIsRunningStress(false);
+        }
+      };
+
+      const handleAnalystAction = async (txId, action) => {
+        setIsActionLoading(true);
+        try {
+          const res = await fetch(`/api/transaction/${txId}/action`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action }),
+          });
+          const updated = await res.json();
+          setTransactions((prev) =>
+            prev.map((row) =>
+              row.tx_id === txId
+                ? { ...row, status: updated.status, resolution_status: updated.resolution_status }
+                : row
+            )
+          );
+          if (selectedTx && selectedTx.tx_id === txId) {
+            setSelectedTx((prev) => ({
+              ...prev,
+              status: updated.status,
+              resolution_status: updated.resolution_status,
+            }));
+          }
+        } catch (err) {
+          console.error("Failed updating transaction:", err);
+        } finally {
+          setIsActionLoading(false);
+        }
+      };
+
+      const handleViewAgentCard = async (agentPath) => {
+        try {
+          const res = await fetch(`/a2a/${agentPath}/.well-known/agent.json`);
+          const card = await res.json();
+          setAgentCardModal(card);
+        } catch (e) {
+          console.error(e);
+        }
+      };
+
+      // Filtered Transactions for Primary Data Table
+      const filteredTransactions = useMemo(() => {
+        return transactions.filter((t) => {
+          if (statusFilter !== "ALL" && t.status !== statusFilter) return false;
+          if (channelFilter !== "ALL" && t.channel !== channelFilter) return false;
+          if (typologyFilter !== "ALL" && t.fraud_typology !== typologyFilter) return false;
+          return true;
+        });
+      }, [transactions, statusFilter, channelFilter, typologyFilter]);
+
+      const totalPages = Math.max(1, Math.ceil(filteredTransactions.length / pageSize));
+      const paginatedTransactions = useMemo(() => {
+        const start = (currentPage - 1) * pageSize;
+        return filteredTransactions.slice(start, start + pageSize);
+      }, [filteredTransactions, currentPage]);
+
+      const totalSuspiciousEur = useMemo(() => {
+        return transactions
+          .filter((t) => Number(t.risk_score) >= 75 || t.status === "FLAGGED" || t.status === "BLOCKED")
+          .reduce((acc, t) => acc + Number(t.amount_eur || 0), 0);
+      }, [transactions]);
+
+      // ECharts Option 1: BigQuery Fraud Volume & Risk Score by Transaction & Typology
+      const bqFraudChartOption = useMemo(() => {
+        const sorted = [...transactions].sort((a, b) => Number(b.risk_score) - Number(a.risk_score));
+        const labels = sorted.map((t) => `${t.tx_id} (${t.country_code})`);
+        const amounts = sorted.map((t) => Math.round(Number(t.amount_eur || 0) / 1000));
+        const scores = sorted.map((t) => Number(t.risk_score || 0));
+
+        return {
+          color: [CHART_COLORS[0], CHART_COLORS[3]],
+          textStyle: { fontFamily: "DM Sans, Inter, sans-serif" },
+          tooltip: {
+            trigger: "axis",
+            backgroundColor: "rgba(255, 255, 255, 0.96)",
+            borderColor: "#e2e8f0",
+            textStyle: { color: "#0f172a", fontSize: 12 },
+          },
+          legend: {
+            data: ["Importo Transazione (k€)", "Fraud Risk Score (0-100)"],
+            top: 4,
+            textStyle: { color: isDark ? "#a1a1aa" : "#52525b" },
+          },
+          grid: { left: "4%", right: "4%", bottom: "10%", top: "16%", containLabel: true },
+          xAxis: {
+            type: "category",
+            data: labels,
+            axisLabel: { color: isDark ? "#a1a1aa" : "#52525b", rotate: 20, fontSize: 11 },
+            axisLine: { lineStyle: { color: isDark ? "#27272a" : "#e4e4e7" } },
+          },
+          yAxis: [
+            {
+              type: "value",
+              name: "Volume (k€)",
+              nameTextStyle: { color: isDark ? "#a1a1aa" : "#52525b" },
+              axisLabel: { color: isDark ? "#a1a1aa" : "#52525b", formatter: "€{value}k" },
+              splitLine: { lineStyle: { color: isDark ? "#1e1e24" : "#f4f4f5" } },
+            },
+            {
+              type: "value",
+              name: "Risk Score",
+              min: 0,
+              max: 100,
+              nameTextStyle: { color: isDark ? "#a1a1aa" : "#52525b" },
+              axisLabel: { color: isDark ? "#a1a1aa" : "#52525b" },
+              splitLine: { show: false },
+            },
+          ],
+          series: [
+            {
+              name: "Importo Transazione (k€)",
+              type: "bar",
+              barMaxWidth: 32,
+              itemStyle: { borderRadius: [4, 4, 0, 0] },
+              data: amounts,
+            },
+            {
+              name: "Fraud Risk Score (0-100)",
+              type: "line",
+              yAxisIndex: 1,
+              smooth: true,
+              symbolSize: 8,
+              lineStyle: { width: 3 },
+              data: scores,
+            },
+          ],
+        };
+      }, [transactions, isDark]);
+
+      // ECharts Option 2: Gateway Telemetry & Stress Test Distribution
+      const gatewayTelemetryChartOption = useMemo(() => {
+        if (stressResult && stressResult.results) {
+          const seqLabels = stressResult.results.map((r) => `#${r.seq}`);
+          const latencies = stressResult.results.map((r) => ({
+            value: r.latency_ms,
+            itemStyle: {
+              color:
+                r.outcome === "GE_A2A_BQ_MCP_200_OK"
+                  ? "#10b981"
+                  : r.outcome === "APIGEE_200_CACHE_HIT"
+                  ? "#3b82f6"
+                  : r.outcome === "MODEL_ARMOR_422_BLOCKED"
+                  ? "#ef4444"
+                  : "#f59e0b",
+              borderRadius: [4, 4, 0, 0],
+            },
+          }));
+          return {
+            textStyle: { fontFamily: "DM Sans, Inter, sans-serif" },
+            tooltip: {
+              trigger: "axis",
+              backgroundColor: "rgba(255, 255, 255, 0.96)",
+              borderColor: "#e2e8f0",
+              textStyle: { color: "#0f172a", fontSize: 12 },
+              formatter: (params) => {
+                const idx = params[0].dataIndex;
+                const item = stressResult.results[idx];
+                return `<b>Req #${item.seq} (${item.outcome})</b><br/>HTTP ${item.http_status} • Latenza: <b>${item.latency_ms} ms</b><br/>Policy: ${item.policy}`;
+              },
+            },
+            grid: { left: "4%", right: "4%", bottom: "10%", top: "12%", containLabel: true },
+            xAxis: {
+              type: "category",
+              data: seqLabels,
+              axisLabel: { color: isDark ? "#a1a1aa" : "#52525b" },
+              axisLine: { lineStyle: { color: isDark ? "#27272a" : "#e4e4e7" } },
+            },
+            yAxis: {
+              type: "value",
+              name: "Latenza End-to-End (ms)",
+              nameTextStyle: { color: isDark ? "#a1a1aa" : "#52525b" },
+              axisLabel: { color: isDark ? "#a1a1aa" : "#52525b", formatter: "{value} ms" },
+              splitLine: { lineStyle: { color: isDark ? "#1e1e24" : "#f4f4f5" } },
+            },
+            series: [
+              {
+                name: "Latenza Richiesta (ms)",
+                type: "bar",
+                barMaxWidth: 26,
+                data: latencies,
+              },
+            ],
+          };
+        }
+
+        // Default breakdown across architectural outcomes
+        return {
+          color: CHART_COLORS,
+          textStyle: { fontFamily: "DM Sans, Inter, sans-serif" },
+          tooltip: {
+            trigger: "axis",
+            backgroundColor: "rgba(255, 255, 255, 0.96)",
+            borderColor: "#e2e8f0",
+            textStyle: { color: "#0f172a", fontSize: 12 },
+          },
+          grid: { left: "4%", right: "4%", bottom: "8%", top: "14%", containLabel: true },
+          xAxis: {
+            type: "category",
+            data: [
+              "1. Apigee Edge\n(Auth + Quota)",
+              "2. Model Armor\n(Input Sanitize)",
+              "3. GE Root Agent\n(Orchestration)",
+              "4. A2A Agent #1\n(Tx Risk + BQ MCP)",
+              "5. A2A Agent #2\n(AML + BQ MCP)",
+              "6. Model Armor\n(Output SDP Mask)",
+            ],
+            axisLabel: { color: isDark ? "#a1a1aa" : "#52525b", interval: 0, fontSize: 11 },
+            axisLine: { lineStyle: { color: isDark ? "#27272a" : "#e4e4e7" } },
+          },
+          yAxis: {
+            type: "value",
+            name: "Latenza Media per Hop (ms)",
+            nameTextStyle: { color: isDark ? "#a1a1aa" : "#52525b" },
+            axisLabel: { color: isDark ? "#a1a1aa" : "#52525b", formatter: "{value} ms" },
+            splitLine: { lineStyle: { color: isDark ? "#1e1e24" : "#f4f4f5" } },
+          },
+          series: [
+            {
+              name: "Chiamata Valida (200 OK)",
+              type: "bar",
+              barMaxWidth: 36,
+              itemStyle: { color: "#10b981", borderRadius: [4, 4, 0, 0] },
+              data: [8.4, 18.9, 85.0, 142.0, 138.0, 18.2],
+            },
+            {
+              name: "Chiamata Bloccata da Model Armor (422)",
+              type: "bar",
+              barMaxWidth: 36,
+              itemStyle: { color: "#ef4444", borderRadius: [4, 4, 0, 0] },
+              data: [8.4, 19.5, 0, 0, 0, 0],
+            },
+          ],
+        };
+      }, [stressResult, isDark]);
+
+      // Determine status of each of the 7 architecture hops based on `lastTrace`
+      const hopStates = useMemo(() => {
+        if (!lastTrace) {
+          return {
+            apigee: { status: "idle", label: "Ready" },
+            armor: { status: "idle", label: "Ready" },
+            ge: { status: "idle", label: "Ready" },
+            a2a1: { status: "idle", label: "Ready" },
+            a2a2: { status: "idle", label: "Ready" },
+            bq: { status: "idle", label: "Ready" },
+            gemini: { status: "idle", label: "Ready" },
+          };
+        }
+        if (lastTrace.verdict === "APIGEE_LLM_TOKEN_QUOTA_429") {
+          return {
+            apigee: { status: "blocked", label: `429 LLMTokenQuota (${lastTrace.user_token_quota?.used_tokens}/${lastTrace.user_token_quota?.allowed_tokens} tok)` },
+            armor: { status: "skipped", label: "Protetto (Non invocato)" },
+            ge: { status: "skipped", label: "Protetto (0 Token)" },
+            a2a1: { status: "skipped", label: "Skipped" },
+            a2a2: { status: "skipped", label: "Skipped" },
+            bq: { status: "skipped", label: "0 Query eseguite" },
+            gemini: { status: "blocked", label: "Bloccato da EnforceOnly (0 Token)" },
+          };
+        }
+        if (lastTrace.verdict === "APIGEE_SPIKE_ARREST_429") {
+          return {
+            apigee: { status: "blocked", label: `429 SpikeArrest (${lastTrace.total_latency_ms}ms)` },
+            armor: { status: "skipped", label: "Protetto (Non invocato)" },
+            ge: { status: "skipped", label: "Protetto (0 Token)" },
+            a2a1: { status: "skipped", label: "Skipped" },
+            a2a2: { status: "skipped", label: "Skipped" },
+            bq: { status: "skipped", label: "0 Query eseguite" },
+            gemini: { status: "skipped", label: "Protetto (0 Token)" },
+          };
+        }
+        if (lastTrace.verdict === "MODEL_ARMOR_BLOCKED") {
+          return {
+            apigee: { status: "passed", label: "200 Auth & Quota OK" },
+            armor: { status: "blocked", label: `422 MATCH_FOUND (${lastTrace.model_armor_input?.latency_ms}ms)` },
+            ge: { status: "skipped", label: "Protetto (Non invocato)" },
+            a2a1: { status: "skipped", label: "Protetto (No A2A Call)" },
+            a2a2: { status: "skipped", label: "Protetto (No A2A Call)" },
+            bq: { status: "skipped", label: "Protetto (No MCP SQL)" },
+            gemini: { status: "skipped", label: "Protetto (0 Token)" },
+          };
+        }
+        if (lastTrace.verdict === "ALLOWED_SEMANTIC_CACHE_HIT") {
+          return {
+            apigee: { status: "cache", label: `200 Semantic Cache HIT (${lastTrace.total_latency_ms}ms)` },
+            armor: { status: "passed", label: "NO_MATCH_FOUND" },
+            ge: { status: "skipped", label: "Cache Hit (0 Token)" },
+            a2a1: { status: "skipped", label: "Cache Hit" },
+            a2a2: { status: "skipped", label: "Cache Hit" },
+            bq: { status: "skipped", label: "Cache Hit" },
+            gemini: { status: "cache", label: "Cache Hit (0 Token addebitati)" },
+          };
+        }
+        const a1 = lastTrace.a2a_traces?.[0];
+        const a2 = lastTrace.a2a_traces?.[1];
+        const gTokens = lastTrace.gemini_step?.usageMetadata?.totalTokenCount || lastTrace.ge_orchestrator?.tokens_consumed || 560;
+        return {
+          apigee: { status: "passed", label: `EnforceOnly OK (${lastTrace.apigee_trace?.latency_ms}ms)` },
+          armor: { status: "passed", label: `NO_MATCH_FOUND (${lastTrace.model_armor_input?.latency_ms}ms)` },
+          ge: { status: "passed", label: `GE Root Fanout (${lastTrace.ge_orchestrator?.latency_ms}ms)` },
+          a2a1: { status: "passed", label: `A2A Completed (${a1?.latency_ms || 120}ms)` },
+          a2a2: { status: "passed", label: `A2A Completed (${a2?.latency_ms || 115}ms)` },
+          bq: { status: "passed", label: `2x MCP SQL (${a1?.mcp_call?.row_count || 0}+${a2?.mcp_call?.row_count || 0} rows)` },
+          gemini: { status: "passed", label: `+${gTokens} tok → CountOnly (${lastTrace.gemini_step?.latency_ms || 180}ms)` },
+        };
+      }, [lastTrace]);
+
+      const hopBadgeClass = (state) => {
+        if (state === "passed")
+          return "border-emerald-500/60 bg-emerald-50/70 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-300";
+        if (state === "blocked")
+          return "border-rose-500 bg-rose-50/90 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300 ring-2 ring-rose-500/30";
+        if (state === "cache")
+          return "border-blue-500 bg-blue-50/80 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300";
+        if (state === "skipped")
+          return "border-zinc-200 dark:border-zinc-800 bg-zinc-100/60 dark:bg-zinc-900/40 text-zinc-400 dark:text-zinc-500 opacity-75";
+        return "border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0c0c0f] text-zinc-700 dark:text-zinc-300";
+      };
+
+      const tokenQuotaPct = Math.min(
+        100,
+        Math.round(((userTokenQuota.used_tokens || 0) / Math.max(1, userTokenQuota.allowed_tokens || 1500)) * 100)
+      );
+
+      return (
+        <div className="max-w-[1600px] mx-auto p-6 space-y-6">
+          {/* 1. HEADER ROW */}
+          <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-zinc-200 dark:border-zinc-800">
+            <div>
+              <div className="flex flex-wrap items-center gap-2.5">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400 border border-blue-200 dark:border-blue-800/60">
+                  <Icon name="shieldCheck" className="w-3.5 h-3.5" />
+                  Google Cloud Reference Architecture • CE Live Demo
+                </span>
+                <span className="font-mono text-xs text-zinc-500 bg-zinc-100 dark:bg-zinc-800 rounded px-2 py-0.5">
+                  Project: cvisco-agentic-demo
+                </span>
+                <span className="font-mono text-xs text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/30 rounded px-2 py-0.5">
+                  User: {gatewayConfig.authenticated_user || "admin@cviscontino.altostrat.com"}
+                </span>
+                <span className="font-mono text-xs text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/30 rounded px-2 py-0.5">
+                  BQ Dataset: agentic_fsi_fraud_demo
+                </span>
+              </div>
+              <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50 mt-2">
+                Enterprise Agentic Governance: Apigee, Model Armor, Gemini, A2A &amp; BigQuery MCP
+              </h1>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+                Financial Services &amp; AML Multi-Agent Control Plane — Include Policy Out-of-the-Box Apigee <code className="font-mono text-blue-500">&lt;LLMTokenQuota&gt;</code> per <code className="font-mono text-purple-500">admin@cviscontino.altostrat.com</code> su Vertex AI Gemini
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2.5 self-start md:self-center">
+              <a
+                href="/architecture"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-blue-600 hover:bg-blue-700 text-white rounded-[8px] px-[12px] py-[8px] text-xs font-semibold transition-colors shadow-sm flex items-center gap-1.5 no-underline"
+              >
+                <Icon name="layers" className="w-3.5 h-3.5" />
+                Schema Architetturale (Copia PNG/SVG)
+              </a>
+              <button
+                onClick={() => handleViewAgentCard("transaction-risk")}
+                className="bg-[#ffffff] dark:bg-[#262626] hover:bg-[#f8fafc] dark:hover:bg-zinc-800 text-[#334155] dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 rounded-[8px] px-[12px] py-[8px] text-xs font-[500] transition-colors shadow-sm flex items-center gap-1.5"
+              >
+                <Icon name="network" className="w-3.5 h-3.5 text-blue-500" />
+                A2A AgentCards
+              </button>
+              <button
+                onClick={() => setShowSettingsModal(true)}
+                className="bg-[#ffffff] dark:bg-[#262626] hover:bg-[#f8fafc] dark:hover:bg-zinc-800 text-[#334155] dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 rounded-[8px] px-[12px] py-[8px] text-xs font-[500] transition-colors shadow-sm flex items-center gap-1.5"
+              >
+                <Icon name="settings" className="w-3.5 h-3.5" />
+                Policy Apigee &amp; Armor
+              </button>
+              <button
+                onClick={() => setIsDark(!isDark)}
+                aria-label="Toggle Theme"
+                className="bg-[#ffffff] dark:bg-[#262626] hover:bg-[#f8fafc] dark:hover:bg-zinc-800 text-[#334155] dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 rounded-[8px] p-2 transition-colors shadow-sm"
+              >
+                {isDark ? <Icon name="sun" className="w-4 h-4 text-amber-400" /> : <Icon name="moon" className="w-4 h-4 text-zinc-700" />}
+              </button>
+            </div>
+          </header>
+
+          {/* 2. KPI CARDS ROW */}
+          <section className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {/* KPI 1 */}
+            <div className="bg-white dark:bg-[#0c0c0f] border border-zinc-200 dark:border-zinc-800 rounded-xl p-5 shadow-sm flex flex-col justify-between">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                  Chiamate Mediate da Apigee X
+                </span>
+                <Icon name="zap" className="w-4 h-4 text-blue-500" />
+              </div>
+              <div className="mt-3 flex items-baseline justify-between">
+                <span className="text-3xl font-extrabold font-mono text-zinc-950 dark:text-zinc-50">
+                  {gatewayMetrics.total_requests}
+                </span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                  <Icon name="trendUp" className="w-3 h-3" />
+                  {gatewayMetrics.allowed_requests} OK ({gatewayMetrics.semantic_cache_hits} Cache)
+                </span>
+              </div>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2">
+                SpikeArrest: <span className="font-mono">{gatewayConfig.spike_arrest_rpm} rpm</span> • 429 Throttled: <span className="font-mono">{gatewayMetrics.throttled_apigee_429}</span>
+              </p>
+            </div>
+
+            {/* KPI 2 */}
+            <div className="bg-white dark:bg-[#0c0c0f] border border-zinc-200 dark:border-zinc-800 rounded-xl p-5 shadow-sm flex flex-col justify-between">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                  Minacce Fermate da Model Armor
+                </span>
+                <Icon name="shieldAlert" className="w-4 h-4 text-rose-500" />
+              </div>
+              <div className="mt-3 flex items-baseline justify-between">
+                <span className="text-3xl font-extrabold font-mono text-zinc-950 dark:text-zinc-50">
+                  {gatewayMetrics.blocked_model_armor}
+                </span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400">
+                  <Icon name="trendDown" className="w-3 h-3" />
+                  100% Intercepted
+                </span>
+              </div>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2">
+                Filtri attivi: <span className="font-mono">PI/Jailbreak, SDP/IBAN, URI, RAI</span>
+              </p>
+            </div>
+
+            {/* KPI 3 */}
+            <div className="bg-white dark:bg-[#0c0c0f] border border-zinc-200 dark:border-zinc-800 rounded-xl p-5 shadow-sm flex flex-col justify-between">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                  Task A2A &amp; Query BigQuery MCP
+                </span>
+                <Icon name="network" className="w-4 h-4 text-emerald-500" />
+              </div>
+              <div className="mt-3 flex items-baseline justify-between">
+                <span className="text-3xl font-extrabold font-mono text-zinc-950 dark:text-zinc-50">
+                  {gatewayMetrics.a2a_tasks_dispatched}
+                </span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                  <Icon name="trendUp" className="w-3 h-3" />
+                  {gatewayMetrics.bq_mcp_queries_executed} MCP SQL
+                </span>
+              </div>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2">
+                2 Sub-Agenti A2A in fan-out parallelo da Gemini Enterprise
+              </p>
+            </div>
+
+            {/* KPI 4 */}
+            <div className="bg-white dark:bg-[#0c0c0f] border border-zinc-200 dark:border-zinc-800 rounded-xl p-5 shadow-sm flex flex-col justify-between">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                  Esposizione Frodi Rilevata (BQ)
+                </span>
+                <Icon name="database" className="w-4 h-4 text-amber-500" />
+              </div>
+              <div className="mt-3 flex items-baseline justify-between">
+                <span className="text-2xl lg:text-3xl font-extrabold font-mono text-zinc-950 dark:text-zinc-50">
+                  {formatEur(totalSuspiciousEur)}
+                </span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400">
+                  <Icon name="trendUp" className="w-3 h-3" />
+                  9 Alert Attivi
+                </span>
+              </div>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2">
+                Dataset live: <span className="font-mono">transactions_ledger</span>
+              </p>
+            </div>
+          </section>
+
+          {/* 2B. APIGEE OUT-OF-THE-BOX <LLMTokenQuota> LIVE GOVERNANCE PANEL FOR admin@cviscontino.altostrat.com */}
+          <section className={`rounded-xl border p-4 shadow-sm transition-all ${
+            userTokenQuota.quota_exceeded
+              ? "bg-rose-50/90 dark:bg-rose-950/30 border-rose-500/70"
+              : "bg-white dark:bg-[#0c0c0f] border-purple-500/40 dark:border-purple-500/40"
+          }`}>
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-bold bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300 border border-purple-300 dark:border-purple-700">
+                    <Icon name="zap" className="w-3.5 h-3.5" />
+                    Apigee OOTB AI Policy: &lt;LLMTokenQuota&gt;
+                  </span>
+                  <span className="font-mono text-xs px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 font-semibold">
+                    Identifier: {userTokenQuota.identifier_value}
+                  </span>
+                  <span className="font-mono text-[11px] px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300">
+                    SharedName: {userTokenQuota.shared_counter}
+                  </span>
+                  <span className="font-mono text-[11px] px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300">
+                    LLMTokenUsageSource: $.usageMetadata.totalTokenCount
+                  </span>
+                </div>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                  <strong>Request PreFlow:</strong> <code className="font-mono">Q-TokenQuota-Enforce (&lt;EnforceOnly&gt;true&lt;/EnforceOnly&gt;)</code> verifica il budget per <code className="font-mono">{userTokenQuota.identifier_value}</code> • <strong>Response Flow:</strong> <code className="font-mono">Q-TokenQuota-Count (&lt;CountOnly&gt;true&lt;/CountOnly&gt;)</code> scala i token reali restituiti da <strong>Vertex AI Gemini</strong>.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-900 px-2.5 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800">
+                  <span className="text-[11px] text-zinc-500 font-medium">Limite Token/min:</span>
+                  {[600, 1500, 5000].map((lim) => (
+                    <button
+                      key={lim}
+                      onClick={() => handleUpdateTokenLimitQuick(lim)}
+                      className={`font-mono text-xs px-2 py-0.5 rounded transition-colors ${
+                        Number(userTokenQuota.allowed_tokens) === lim
+                          ? "bg-purple-600 text-white font-bold"
+                          : "hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300"
+                      }`}
+                    >
+                      {lim}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  onClick={() =>
+                    handleInvokeGateway(
+                      "Genera un report forense completo su tutte le transazioni internazionali SWIFT e SEPA degli ultimi 12 mesi per tutti i clienti Corporate Treasury.",
+                      "apigee_token_quota_exceeded",
+                      null,
+                      true
+                    )
+                  }
+                  disabled={isInvoking}
+                  className="bg-amber-500 hover:bg-amber-600 text-zinc-950 font-semibold text-xs px-3 py-1.5 rounded-lg transition-colors shadow-sm flex items-center gap-1.5"
+                >
+                  <Icon name="alertTriangle" className="w-3.5 h-3.5" />
+                  Simula Blocco 429 LLMTokenQuota
+                </button>
+
+                <button
+                  onClick={handleResetTokenQuota}
+                  className="bg-zinc-200 hover:bg-zinc-300 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 font-medium text-xs px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
+                >
+                  <Icon name="refresh" className="w-3.5 h-3.5" />
+                  Reset Quota ({userTokenQuota.reset_in_seconds}s)
+                </button>
+              </div>
+            </div>
+
+            {/* Token Progress Bar & Breakdown */}
+            <div className="mt-3 pt-3 border-t border-zinc-200/70 dark:border-zinc-800/70">
+              <div className="flex flex-wrap items-center justify-between text-xs mb-1.5 gap-2">
+                <div className="flex items-center gap-3 font-mono">
+                  <span className="font-bold text-zinc-900 dark:text-zinc-100">
+                    Token Usati (60s window): {userTokenQuota.used_tokens} / {userTokenQuota.allowed_tokens} ({tokenQuotaPct}%)
+                  </span>
+                  <span className="text-zinc-500">
+                    Prompt: <strong>{userTokenQuota.prompt_tokens_window}</strong> • Output Gemini: <strong>{userTokenQuota.candidates_tokens_window}</strong>
+                  </span>
+                </div>
+                <span className={`font-mono font-bold ${
+                  userTokenQuota.quota_exceeded ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"
+                }`}>
+                  {userTokenQuota.quota_exceeded
+                    ? `QUOTA ESAURITA — HTTP 429 ATTIVO PER ${userTokenQuota.identifier_value}`
+                    : `Disponibili: ${userTokenQuota.available_tokens} token`}
+                </span>
+              </div>
+              <div className="w-full h-2.5 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
+                <div
+                  className={`h-full transition-all duration-500 ${
+                    userTokenQuota.quota_exceeded
+                      ? "bg-rose-500"
+                      : tokenQuotaPct > 75
+                      ? "bg-amber-500"
+                      : "bg-purple-600"
+                  }`}
+                  style={{ width: `${tokenQuotaPct}%` }}
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* 3. LIVE ARCHITECTURE TOPOLOGY BAR (7 HOPS) */}
+          <section className="bg-white dark:bg-[#0c0c0f] border border-zinc-200 dark:border-zinc-800 rounded-xl p-5 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+              <div>
+                <h2 className="text-base font-bold text-zinc-950 dark:text-zinc-50 flex items-center gap-2">
+                  <Icon name="cpu" className="w-4 h-4 text-blue-500" />
+                  Topologia Live del Flusso Agentico End-to-End (7 Hop con Vertex AI Gemini &amp; Apigee LLMTokenQuota)
+                </h2>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                  Ogni chiamata di <code className="font-mono">{gatewayConfig.authenticated_user}</code> attraversa Apigee X (<code>LLMTokenQuota EnforceOnly</code>) e Cloud Model Armor prima di raggiungere GE, i 2 Agenti A2A, BigQuery MCP e Vertex AI Gemini (<code>LLMTokenQuota CountOnly</code>).
+                </p>
+              </div>
+              {lastTrace && (
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-xs text-zinc-500 bg-zinc-100 dark:bg-zinc-800 rounded px-2 py-1">
+                    Req ID: {lastTrace.request_id}
+                  </span>
+                  <span
+                    className={`font-mono text-xs font-semibold px-2.5 py-1 rounded ${
+                      lastTrace.http_status === 200
+                        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                        : lastTrace.http_status === 422
+                        ? "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400"
+                        : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                    }`}
+                  >
+                    HTTP {lastTrace.http_status} • {lastTrace.total_latency_ms} ms
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-7 gap-2.5">
+              {/* Node 1: Apigee */}
+              <div className={`border rounded-lg p-3 transition-all duration-300 ${hopBadgeClass(hopStates.apigee.status)}`}>
+                <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider">
+                  <span>1. Apigee X Gateway</span>
+                  <Icon name="zap" className="w-3.5 h-3.5" />
+                </div>
+                <div className="text-xs font-semibold mt-1.5">LLMTokenQuota EnforceOnly</div>
+                <div className="font-mono text-[11px] mt-1 opacity-90">{hopStates.apigee.label}</div>
+              </div>
+
+              {/* Node 2: Model Armor */}
+              <div className={`border rounded-lg p-3 transition-all duration-300 ${hopBadgeClass(hopStates.armor.status)}`}>
+                <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider">
+                  <span>2. Model Armor</span>
+                  <Icon name="shield" className="w-3.5 h-3.5" />
+                </div>
+                <div className="text-xs font-semibold mt-1.5">PI • Jailbreak • SDP • RAI</div>
+                <div className="font-mono text-[11px] mt-1 opacity-90">{hopStates.armor.label}</div>
+              </div>
+
+              {/* Node 3: Gemini Enterprise */}
+              <div className={`border rounded-lg p-3 transition-all duration-300 ${hopBadgeClass(hopStates.ge.status)}`}>
+                <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider">
+                  <span>3. Gemini Enterprise</span>
+                  <Icon name="cpu" className="w-3.5 h-3.5" />
+                </div>
+                <div className="text-xs font-semibold mt-1.5">Root Multi-Agent (ADK)</div>
+                <div className="font-mono text-[11px] mt-1 opacity-90">{hopStates.ge.label}</div>
+              </div>
+
+              {/* Node 4: A2A Agent 1 */}
+              <div className={`border rounded-lg p-3 transition-all duration-300 ${hopBadgeClass(hopStates.a2a1.status)}`}>
+                <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider">
+                  <span>4a. A2A Agent #1</span>
+                  <Icon name="network" className="w-3.5 h-3.5" />
+                </div>
+                <div className="text-xs font-semibold mt-1.5">Transaction &amp; Risk</div>
+                <div className="font-mono text-[11px] mt-1 opacity-90">{hopStates.a2a1.label}</div>
+              </div>
+
+              {/* Node 5: A2A Agent 2 */}
+              <div className={`border rounded-lg p-3 transition-all duration-300 ${hopBadgeClass(hopStates.a2a2.status)}`}>
+                <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider">
+                  <span>4b. A2A Agent #2</span>
+                  <Icon name="network" className="w-3.5 h-3.5" />
+                </div>
+                <div className="text-xs font-semibold mt-1.5">AML &amp; Compliance</div>
+                <div className="font-mono text-[11px] mt-1 opacity-90">{hopStates.a2a2.label}</div>
+              </div>
+
+              {/* Node 6: BigQuery MCP */}
+              <div className={`border rounded-lg p-3 transition-all duration-300 ${hopBadgeClass(hopStates.bq.status)}`}>
+                <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider">
+                  <span>5. BigQuery MCP</span>
+                  <Icon name="database" className="w-3.5 h-3.5" />
+                </div>
+                <div className="text-xs font-semibold mt-1.5">execute_sql_readonly</div>
+                <div className="font-mono text-[11px] mt-1 opacity-90">{hopStates.bq.label}</div>
+              </div>
+
+              {/* Node 7: Vertex AI Gemini + LLMTokenQuota CountOnly */}
+              <div className={`border rounded-lg p-3 transition-all duration-300 ${hopBadgeClass(hopStates.gemini.status)}`}>
+                <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider">
+                  <span>6. Vertex AI Gemini</span>
+                  <Icon name="cpu" className="w-3.5 h-3.5" />
+                </div>
+                <div className="text-xs font-semibold mt-1.5">usageMetadata → CountOnly</div>
+                <div className="font-mono text-[11px] mt-1 opacity-90">{hopStates.gemini.label}</div>
+              </div>
+            </div>
+          </section>
+
+          {/* 4. SIMULATOR CONSOLE + TRACE INSPECTOR */}
+          <section className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Left Column (5 cols): Call Generator & Stress Test Controls */}
+            <div className="lg:col-span-5 bg-white dark:bg-[#0c0c0f] border border-zinc-200 dark:border-zinc-800 rounded-xl p-5 shadow-sm flex flex-col justify-between space-y-4">
+              <div>
+                <h2 className="text-lg font-bold text-zinc-950 dark:text-zinc-50">
+                  Console Esecuzione Chiamate Demo
+                </h2>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                  Seleziona la modalità di test per simulare chiamate legittime A2A+MCP+Gemini, il superamento della <code className="font-mono">LLMTokenQuota</code> per <code className="font-mono">admin@cviscontino.altostrat.com</code>, attacchi bloccati da Model Armor o uno Stress Test.
+                </p>
+
+                {/* Segmented Mode Control */}
+                <div className="bg-zinc-100 dark:bg-zinc-900 p-1 rounded-[8px] grid grid-cols-3 gap-1 mt-4">
+                  <button
+                    onClick={() => {
+                      setActiveModeTab("VALID_A2A_MCP");
+                      const firstValid = scenarios.find((s) => s.category === "VALID_A2A_MCP");
+                      if (firstValid) handleSelectScenario(firstValid);
+                    }}
+                    className={`py-1.5 px-2 rounded-[6px] text-xs font-semibold transition-all ${
+                      activeModeTab === "VALID_A2A_MCP"
+                        ? "bg-white dark:bg-zinc-800 text-[#2563eb] dark:text-[#60a5fa] shadow-sm"
+                        : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
+                    }`}
+                  >
+                    1. Chiamate &amp; Token Quota
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActiveModeTab("MODEL_ARMOR_BLOCKED");
+                      const firstArmor = scenarios.find((s) => s.category === "MODEL_ARMOR_BLOCKED");
+                      if (firstArmor) handleSelectScenario(firstArmor);
+                    }}
+                    className={`py-1.5 px-2 rounded-[6px] text-xs font-semibold transition-all ${
+                      activeModeTab === "MODEL_ARMOR_BLOCKED"
+                        ? "bg-white dark:bg-zinc-800 text-rose-600 dark:text-rose-400 shadow-sm"
+                        : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
+                    }`}
+                  >
+                    2. Stop Model Armor
+                  </button>
+                  <button
+                    onClick={() => setActiveModeTab("STRESS_TEST")}
+                    className={`py-1.5 px-2 rounded-[6px] text-xs font-semibold transition-all ${
+                      activeModeTab === "STRESS_TEST"
+                        ? "bg-white dark:bg-zinc-800 text-amber-600 dark:text-amber-400 shadow-sm"
+                        : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
+                    }`}
+                  >
+                    3. Stress Test (429)
+                  </button>
+                </div>
+
+                {activeModeTab !== "STRESS_TEST" ? (
+                  <div className="mt-4 space-y-3">
+                    <label className="block text-xs font-medium text-zinc-500">
+                      Preset Scenari ({activeModeTab === "VALID_A2A_MCP" ? "Flusso Completo GE → 2x A2A → BQ MCP → Gemini + LLMTokenQuota" : "Intercettati da Cloud Model Armor"}):
+                    </label>
+                    <div className="space-y-2 max-h-[230px] overflow-y-auto pr-1">
+                      {scenarios
+                        .filter((s) =>
+                          activeModeTab === "VALID_A2A_MCP"
+                            ? s.category === "VALID_A2A_MCP" || s.category === "APIGEE_QUOTA_BLOCKED"
+                            : s.category === activeModeTab
+                        )
+                        .map((sc) => {
+                          const isSelected = selectedScenarioId === sc.id;
+                          return (
+                            <div
+                              key={sc.id}
+                              onClick={() => handleSelectScenario(sc)}
+                              className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                                isSelected
+                                  ? "border-blue-500 bg-blue-50/60 dark:bg-blue-950/30"
+                                  : "border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800/60"
+                              }`}
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                                  {sc.title}
+                                </span>
+                                <span
+                                  className={`font-mono text-[10px] px-2 py-0.5 rounded font-semibold shrink-0 ${
+                                    sc.category === "VALID_A2A_MCP"
+                                      ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
+                                      : sc.category === "APIGEE_QUOTA_BLOCKED"
+                                      ? "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
+                                      : "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300"
+                                  }`}
+                                >
+                                  {sc.badge}
+                                </span>
+                              </div>
+                              <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1">
+                                {sc.description}
+                              </p>
+                            </div>
+                          );
+                        })}
+                    </div>
+
+                    <div className="pt-2">
+                      <label className="block text-xs font-medium text-zinc-500 mb-1.5">
+                        Payload Prompt inviato all'Endpoint Apigee (`/v1/agentic-fsi`):
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={customPrompt}
+                        onChange={(e) => setCustomPrompt(e.target.value)}
+                        className="w-full bg-[#ffffff] dark:bg-[#09090b] border border-zinc-200 dark:border-zinc-800 rounded-[8px] px-[12px] py-[8px] text-xs font-mono shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 text-zinc-950 dark:text-zinc-100 transition-all"
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1">
+                      <label className="inline-flex items-center gap-2 text-xs text-zinc-500 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={bypassCache}
+                          onChange={(e) => setBypassCache(e.target.checked)}
+                          className="rounded accent-blue-500"
+                        />
+                        Forza ricalcolo A2A + BigQuery MCP (Bypass Apigee Semantic Cache)
+                      </label>
+                    </div>
+                  </div>
+                ) : (
+                  /* STRESS TEST PANEL */
+                  <div className="mt-4 space-y-3">
+                    <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/30 text-amber-800 dark:text-amber-300 rounded-lg p-3 text-xs">
+                      <strong>Apigee SpikeArrest &amp; Token Quota Stress Tester:</strong> Invia una raffica concorrente di richieste verso il proxy Apigee X per verificare il blocco degli attacchi (<code>422 Model Armor</code>), il caching semantico (<code>200 Cache Hit</code>) e il rate limiting (<code>429 Too Many Requests</code>) a protezione di Gemini Enterprise e BigQuery MCP.
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-zinc-500 mb-1">
+                          Richieste Totali nel Burst
+                        </label>
+                        <input
+                          type="number"
+                          min={6}
+                          max={60}
+                          value={stressTotalReq}
+                          onChange={(e) => setStressTotalReq(e.target.value)}
+                          className="w-full bg-[#ffffff] dark:bg-[#09090b] border border-zinc-200 dark:border-zinc-800 rounded-[8px] px-[12px] py-[8px] text-sm font-mono text-zinc-950 dark:text-zinc-100"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-zinc-500 mb-1">
+                          Soglia SpikeArrest (req/min)
+                        </label>
+                        <input
+                          type="number"
+                          min={4}
+                          max={50}
+                          value={stressSpikeLimit}
+                          onChange={(e) => setStressSpikeLimit(e.target.value)}
+                          className="w-full bg-[#ffffff] dark:bg-[#09090b] border border-zinc-200 dark:border-zinc-800 rounded-[8px] px-[12px] py-[8px] text-sm font-mono text-zinc-950 dark:text-zinc-100"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-zinc-500 mb-1">
+                        Profilo del Traffico Concorrente
+                      </label>
+                      <select
+                        value={stressProfile}
+                        onChange={(e) => setStressProfile(e.target.value)}
+                        className="w-full bg-[#ffffff] dark:bg-[#09090b] border border-zinc-200 dark:border-zinc-800 rounded-[8px] px-[12px] py-[8px] text-xs text-zinc-950 dark:text-zinc-100"
+                      >
+                        <option value="mixed_realistic">Mix Realistico (Chiamate A2A + Cache Hit + Attacchi Model Armor)</option>
+                        <option value="burst_quota_test">Burst Puro Legittimo (Test Soglia 429 SpikeArrest &amp; Token Quota)</option>
+                        <option value="attack_wave">Ondata Ostile (50% Prompt Injection / PII Exfiltration + 50% Burst)</option>
+                      </select>
+                    </div>
+
+                    {stressResult && (
+                      <div className="grid grid-cols-4 gap-2 pt-2">
+                        <div className="p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50 text-center">
+                          <div className="text-lg font-extrabold font-mono text-emerald-700 dark:text-emerald-400">
+                            {stressResult.summary.ok_a2a_mcp_count}
+                          </div>
+                          <div className="text-[10px] text-emerald-800 dark:text-emerald-300">200 A2A+MCP</div>
+                        </div>
+                        <div className="p-2.5 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/50 text-center">
+                          <div className="text-lg font-extrabold font-mono text-blue-700 dark:text-blue-400">
+                            {stressResult.summary.ok_cache_hit_count}
+                          </div>
+                          <div className="text-[10px] text-blue-800 dark:text-blue-300">200 Cache Hit</div>
+                        </div>
+                        <div className="p-2.5 rounded-lg bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800/50 text-center">
+                          <div className="text-lg font-extrabold font-mono text-rose-700 dark:text-rose-400">
+                            {stressResult.summary.blocked_armor_422_count}
+                          </div>
+                          <div className="text-[10px] text-rose-800 dark:text-rose-300">422 Armor Block</div>
+                        </div>
+                        <div className="p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 text-center">
+                          <div className="text-lg font-extrabold font-mono text-amber-700 dark:text-amber-400">
+                            {stressResult.summary.throttled_apigee_429_count}
+                          </div>
+                          <div className="text-[10px] text-amber-800 dark:text-amber-300">429 Throttled</div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-3 border-t border-zinc-200 dark:border-zinc-800 flex items-center gap-3">
+                {activeModeTab !== "STRESS_TEST" ? (
+                  <button
+                    onClick={() => handleInvokeGateway()}
+                    disabled={isInvoking}
+                    className={`w-full flex items-center justify-center gap-2 rounded-[8px] px-[16px] py-[10px] text-sm font-[600] transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed ${
+                      activeModeTab === "MODEL_ARMOR_BLOCKED"
+                        ? "bg-[#e11d48] hover:bg-[#be123c] text-white"
+                        : "bg-[#059669] hover:bg-[#047857] text-[#000000]"
+                    }`}
+                  >
+                    <Icon name="play" className="w-4 h-4" />
+                    {isInvoking
+                      ? "Esecuzione Pipeline Apigee → Armor → GE → A2A → BQ MCP..."
+                      : activeModeTab === "MODEL_ARMOR_BLOCKED"
+                      ? "Invia Attacco (Verifica Blocco Model Armor)"
+                      : "Invia Chiamata al Multi-Agente GE (A2A + BQ MCP)"}
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleRunStressTest}
+                    disabled={isRunningStress}
+                    className="w-full flex items-center justify-center gap-2 bg-[#059669] hover:bg-[#047857] text-[#000000] rounded-[8px] px-[16px] py-[10px] text-sm font-[600] transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Icon name="zap" className="w-4 h-4" />
+                    {isRunningStress
+                      ? "Esecuzione Burst Concorrente su Apigee..."
+                      : `Lancia Stress Test (${stressTotalReq} Chiamate Concorrenti)`}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Right Column (7 cols): Deep Trace & Packet Inspector */}
+            <div className="lg:col-span-7 bg-white dark:bg-[#0c0c0f] border border-zinc-200 dark:border-zinc-800 rounded-xl p-5 shadow-sm flex flex-col">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-200 dark:border-zinc-800 pb-3">
+                <div>
+                  <h2 className="text-lg font-bold text-zinc-950 dark:text-zinc-50 flex items-center gap-2">
+                    <Icon name="terminal" className="w-4 h-4 text-blue-500" />
+                    Ispettore Telemetria &amp; Payload (Apigee LLMTokenQuota / Gemini / Model Armor / A2A / MCP)
+                  </h2>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                    Esamina la sintesi dell'Orchestratore GE, il conteggio token di Vertex AI Gemini + Apigee OOTB LLMTokenQuota, Cloud Model Armor, A2A e BigQuery MCP.
+                  </p>
+                </div>
+              </div>
+
+              {/* Underline Tabs */}
+              <div className="flex border-b border-zinc-200 dark:border-zinc-800 mt-2 gap-4 overflow-x-auto">
+                {[
+                  { id: "ge_synthesis", label: "1. Risposta GE & Sintesi" },
+                  { id: "gemini_quota", label: "2. Gemini & LLMTokenQuota" },
+                  { id: "model_armor", label: "3. Verdetto Model Armor" },
+                  { id: "a2a_jsonrpc", label: "4. Protocollo A2A (2 Agenti)" },
+                  { id: "bq_mcp", label: "5. Query BigQuery MCP" },
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveInspectorTab(tab.id)}
+                    className={`py-2.5 text-xs font-semibold whitespace-nowrap transition-colors border-b-2 ${
+                      activeInspectorTab === tab.id
+                        ? "border-[#3b82f6] text-[#2563eb] dark:text-[#60a5fa]"
+                        : "border-transparent text-zinc-500 hover:text-[#334155] dark:hover:text-[#e2e8f0] hover:border-[#3b82f6]"
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Tab Content Area */}
+              <div className="mt-4 flex-1 min-h-[340px] max-h-[420px] overflow-y-auto pr-1">
+                {!lastTrace ? (
+                  <div className="h-full flex items-center justify-center text-sm text-zinc-400">
+                    Esegui una chiamata per ispezionare il trace multi-hop...
+                  </div>
+                ) : activeInspectorTab === "ge_synthesis" ? (
+                  <div className="space-y-4">
+                    {/* Status Alert Banner */}
+                    <div
+                      className={`rounded-lg p-4 border flex items-start gap-3 ${
+                        lastTrace.http_status === 200
+                          ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800/30 text-emerald-800 dark:text-emerald-300"
+                          : lastTrace.http_status === 422
+                          ? "bg-rose-50 dark:bg-rose-900/20 border-rose-200 dark:border-rose-800/30 text-rose-800 dark:text-rose-300"
+                          : "bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800/30 text-amber-800 dark:text-amber-300"
+                      }`}
+                    >
+                      <Icon
+                        name={lastTrace.http_status === 200 ? "checkCircle" : "alertTriangle"}
+                        className="w-5 h-5 shrink-0 mt-0.5"
+                      />
+                      <div className="text-xs space-y-1">
+                        <div className="font-bold text-sm">
+                          Esito Gateway: {lastTrace.verdict} (HTTP {lastTrace.http_status})
+                        </div>
+                        <div>
+                          Prompt: <span className="font-mono">"{lastTrace.prompt}"</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Formatted Response */}
+                    <div className="bg-zinc-50 dark:bg-zinc-900/70 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 text-xs leading-relaxed whitespace-pre-wrap text-zinc-800 dark:text-zinc-200">
+                      {lastTrace.response_markdown}
+                    </div>
+                  </div>
+                ) : activeInspectorTab === "gemini_quota" ? (
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                      <span className="font-semibold text-zinc-700 dark:text-zinc-300">
+                        Vertex AI Gemini (`generateContent`) + Apigee OOTB `&lt;LLMTokenQuota&gt;`
+                      </span>
+                      <span className="font-mono text-[11px] bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded">
+                        Identifier: {lastTrace.user_token_quota?.user_email || "admin@cviscontino.altostrat.com"}
+                      </span>
+                    </div>
+                    <pre className="bg-zinc-950 text-zinc-100 p-4 rounded-lg text-[11px] font-mono overflow-x-auto border border-zinc-800">
+                      {JSON.stringify(
+                        {
+                          apigee_ootb_policy: {
+                            policy_type: "LLMTokenQuota (Out-of-the-Box AI Policy)",
+                            shared_name: "user-gemini-token-counter",
+                            request_preflow_step: "Q-TokenQuota-Enforce (EnforceOnly=true)",
+                            response_preflow_step: "Q-TokenQuota-Count (CountOnly=true, jsonPath('$.usageMetadata.totalTokenCount'))",
+                          },
+                          user_token_quota_state: lastTrace.user_token_quota,
+                          vertex_ai_gemini_step: lastTrace.gemini_step,
+                        },
+                        null,
+                        2
+                      )}
+                    </pre>
+                  </div>
+                ) : activeInspectorTab === "model_armor" ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-semibold text-zinc-700 dark:text-zinc-300">
+                        Cloud Model Armor API (`sanitizeUserPrompt` &amp; `sanitizeModelResponse`)
+                      </span>
+                      <span className="font-mono text-zinc-500">
+                        Template: fsi-agent-armor-strict
+                      </span>
+                    </div>
+                    <pre className="bg-zinc-950 text-zinc-100 p-4 rounded-lg text-[11px] font-mono overflow-x-auto border border-zinc-800">
+                      {JSON.stringify(
+                        {
+                          apigee_trace: lastTrace.apigee_trace,
+                          model_armor_input_inspection: lastTrace.model_armor_input,
+                          model_armor_output_inspection: lastTrace.model_armor_output,
+                        },
+                        null,
+                        2
+                      )}
+                    </pre>
+                  </div>
+                ) : activeInspectorTab === "a2a_jsonrpc" ? (
+                  lastTrace.a2a_traces && lastTrace.a2a_traces.length > 0 ? (
+                    <div className="space-y-4">
+                      {lastTrace.a2a_traces.map((a2a, idx) => (
+                        <div
+                          key={a2a.id}
+                          className="border border-zinc-200 dark:border-zinc-800 rounded-lg p-3.5 bg-zinc-50/50 dark:bg-zinc-900/40"
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-bold text-blue-600 dark:text-blue-400 font-mono">
+                              A2A Sub-Agent #{idx + 1}: {a2a.agent_name}
+                            </span>
+                            <span className="font-mono text-[11px] bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded">
+                              {a2a.protocol} • {a2a.status} • {a2a.latency_ms} ms
+                            </span>
+                          </div>
+                          <pre className="bg-zinc-950 text-zinc-100 p-3 rounded text-[11px] font-mono overflow-x-auto border border-zinc-800">
+                            {JSON.stringify(
+                              {
+                                jsonrpc: a2a.jsonrpc,
+                                id: a2a.id,
+                                endpoint: a2a.agent_endpoint,
+                                a2a_request: a2a.a2a_request,
+                                summary_metrics: a2a.summary_metrics,
+                              },
+                              null,
+                              2
+                            )}
+                          </pre>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-6 text-center text-xs text-rose-500 font-mono bg-rose-50/50 dark:bg-rose-950/20 rounded-lg border border-rose-200 dark:border-rose-900/40">
+                      Nessun task A2A generato: la richiesta è stata bloccata a monte da {lastTrace.blocked_at_hop} (Zero chiamate verso Gemini Enterprise e i Sub-Agenti A2A).
+                    </div>
+                  )
+                ) : (
+                  /* bq_mcp tab */
+                  lastTrace.a2a_traces && lastTrace.a2a_traces.length > 0 ? (
+                    <div className="space-y-4">
+                      {lastTrace.a2a_traces.map((a2a, idx) => (
+                        <div
+                          key={a2a.id}
+                          className="border border-zinc-200 dark:border-zinc-800 rounded-lg p-3.5 bg-zinc-50/50 dark:bg-zinc-900/40 space-y-2"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 font-mono">
+                              MCP Call da {a2a.agent_name} → tool: `{a2a.mcp_call.mcp_tool}`
+                            </span>
+                            <span className="font-mono text-[11px] text-zinc-500">
+                              Job: {a2a.mcp_call.job_id} ({a2a.mcp_call.execution_ms} ms • {a2a.mcp_call.row_count} righe)
+                            </span>
+                          </div>
+                          <pre className="bg-zinc-950 text-emerald-300 p-3 rounded text-[11px] font-mono overflow-x-auto border border-zinc-800">
+                            {a2a.mcp_call.sql}
+                          </pre>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-6 text-center text-xs text-rose-500 font-mono bg-rose-50/50 dark:bg-rose-950/20 rounded-lg border border-rose-200 dark:border-rose-900/40">
+                      Nessuna query eseguita sul server BigQuery MCP: la richiesta è stata intercettata a monte da {lastTrace.blocked_at_hop}.
+                    </div>
+                  )
+                )}
+              </div>
+            </div>
+          </section>
+
+          {/* 5. MAIN CONTENT SPLIT: PRIMARY BIGQUERY DATA TABLE + CONDITIONAL INVESTIGATION SIDE PANEL */}
+          <section className="space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h2 className="text-xl font-bold text-zinc-950 dark:text-zinc-50">
+                  Esploratore Dati Live BigQuery MCP (`transactions_ledger` &amp; `aml_compliance_alerts`)
+                </h2>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                  Clicca su una transazione per aprire il pannello laterale di indagine AML/Fraud o per inviare un'ispezione dedicata tramite il Multi-Agente A2A.
+                </p>
+              </div>
+              <button
+                onClick={() => loadInitialData(true)}
+                className="bg-[#ffffff] dark:bg-[#262626] hover:bg-[#f8fafc] dark:hover:bg-zinc-800 text-[#334155] dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 rounded-[8px] px-[14px] py-[7px] text-xs font-[500] transition-colors shadow-sm flex items-center gap-1.5 self-start"
+              >
+                <Icon name="refresh" className="w-3.5 h-3.5" />
+                Sincronizza BigQuery MCP
+              </button>
+            </div>
+
+            <div className="flex flex-col lg:flex-row gap-6 items-start">
+              {/* Primary Table Container: w-full normal, w-2/3 when row selected */}
+              <div
+                className={`${
+                  selectedTx ? "w-full lg:w-2/3" : "w-full"
+                } transition-all duration-300 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-[12px] overflow-visible shadow-sm`}
+              >
+                {/* Toolbar with Dropdown Filters (relative z-30 so dropdowns stack above sticky headers) */}
+                <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-3 relative z-30">
+                  <div className="flex flex-wrap items-center gap-2">
+                    {/* Status Dropdown */}
+                    <div className="relative">
+                      <button
+                        onClick={() => setOpenDropdown(openDropdown === "status" ? null : "status")}
+                        className="bg-[#ffffff] dark:bg-[#262626] hover:bg-[#f8fafc] dark:hover:bg-zinc-800 text-[#334155] dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 rounded-[8px] px-[12px] py-[6px] text-xs font-[500] transition-colors shadow-sm flex items-center gap-1.5"
+                      >
+                        <Icon name="filter" className="w-3.5 h-3.5 text-blue-500" />
+                        Stato: <span className="font-mono">{statusFilter}</span>
+                      </button>
+                      {openDropdown === "status" && (
+                        <div className="absolute left-0 mt-1 w-44 bg-[#ffffff] dark:bg-[#0c0c0f] shadow-lg border border-zinc-200 dark:border-zinc-800 rounded-[12px] py-1 z-40">
+                          {["ALL", "FLAGGED", "BLOCKED", "PENDING_REVIEW", "SETTLED"].map((st) => (
+                            <button
+                              key={st}
+                              onClick={() => {
+                                setStatusFilter(st);
+                                setCurrentPage(1);
+                                setOpenDropdown(null);
+                              }}
+                              className="w-full text-left px-3 py-1.5 text-xs hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center justify-between"
+                            >
+                              <span>{st}</span>
+                              {statusFilter === st && <span className="text-blue-500 font-bold">✓</span>}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Channel Dropdown */}
+                    <div className="relative">
+                      <button
+                        onClick={() => setOpenDropdown(openDropdown === "channel" ? null : "channel")}
+                        className="bg-[#ffffff] dark:bg-[#262626] hover:bg-[#f8fafc] dark:hover:bg-zinc-800 text-[#334155] dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 rounded-[8px] px-[12px] py-[6px] text-xs font-[500] transition-colors shadow-sm flex items-center gap-1.5"
+                      >
+                        Canale: <span className="font-mono">{channelFilter}</span>
+                      </button>
+                      {openDropdown === "channel" && (
+                        <div className="absolute left-0 mt-1 w-48 bg-[#ffffff] dark:bg-[#0c0c0f] shadow-lg border border-zinc-200 dark:border-zinc-800 rounded-[12px] py-1 z-40">
+                          {["ALL", "SWIFT_WIRE", "SEPA_INSTANT", "SEPA_CREDIT", "API_GATEWAY", "CARD_NOT_PRESENT"].map((ch) => (
+                            <button
+                              key={ch}
+                              onClick={() => {
+                                setChannelFilter(ch);
+                                setCurrentPage(1);
+                                setOpenDropdown(null);
+                              }}
+                              className="w-full text-left px-3 py-1.5 text-xs hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center justify-between"
+                            >
+                              <span>{ch}</span>
+                              {channelFilter === ch && <span className="text-blue-500 font-bold">✓</span>}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Typology Dropdown */}
+                    <div className="relative">
+                      <button
+                        onClick={() => setOpenDropdown(openDropdown === "typology" ? null : "typology")}
+                        className="bg-[#ffffff] dark:bg-[#262626] hover:bg-[#f8fafc] dark:hover:bg-zinc-800 text-[#334155] dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 rounded-[8px] px-[12px] py-[6px] text-xs font-[500] transition-colors shadow-sm flex items-center gap-1.5"
+                      >
+                        Tipologia Frode: <span className="font-mono">{typologyFilter}</span>
+                      </button>
+                      {openDropdown === "typology" && (
+                        <div className="absolute left-0 mt-1 w-56 bg-[#ffffff] dark:bg-[#0c0c0f] shadow-lg border border-zinc-200 dark:border-zinc-800 rounded-[12px] py-1 z-40">
+                          {[
+                            "ALL",
+                            "CROSS_BORDER_STRUCTURING",
+                            "ACCOUNT_TAKEOVER",
+                            "SYNTHETIC_IDENTITY",
+                            "CARD_NOT_PRESENT_BURST",
+                            "NONE",
+                          ].map((tp) => (
+                            <button
+                              key={tp}
+                              onClick={() => {
+                                setTypologyFilter(tp);
+                                setCurrentPage(1);
+                                setOpenDropdown(null);
+                              }}
+                              className="w-full text-left px-3 py-1.5 text-xs hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center justify-between"
+                            >
+                              <span className="truncate">{tp}</span>
+                              {typologyFilter === tp && <span className="text-blue-500 font-bold">✓</span>}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {(statusFilter !== "ALL" || channelFilter !== "ALL" || typologyFilter !== "ALL") && (
+                      <button
+                        onClick={() => {
+                          setStatusFilter("ALL");
+                          setChannelFilter("ALL");
+                          setTypologyFilter("ALL");
+                          setCurrentPage(1);
+                        }}
+                        className="text-[#2563eb] dark:text-[#60a5fa] hover:bg-[#eff6ff] dark:hover:bg-[#1e3a8a] rounded-[8px] px-[10px] py-[6px] text-xs font-[500] transition-colors"
+                      >
+                        Reset Filtri
+                      </button>
+                    )}
+                  </div>
+
+                  <span className="text-xs text-zinc-500 dark:text-zinc-400 font-mono">
+                    {filteredTransactions.length} record su BigQuery
+                  </span>
+                </div>
+
+                {/* Table */}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead className="sticky top-0 bg-zinc-100 dark:bg-zinc-900 z-10 text-zinc-500 dark:text-zinc-400 text-xs uppercase tracking-wider">
+                      <tr>
+                        <th className="py-3 px-4 font-semibold">TX ID &amp; Data</th>
+                        <th className="py-3 px-4 font-semibold">Cliente &amp; Segmento</th>
+                        <th className="py-3 px-4 font-semibold">Beneficiario &amp; Canale</th>
+                        <th className="py-3 px-4 font-semibold text-right">Importo</th>
+                        <th className="py-3 px-4 font-semibold w-40">Fraud Risk Score</th>
+                        <th className="py-3 px-4 font-semibold">Stato</th>
+                      </tr>
+                    </thead>
+                    <tbody className="text-xs">
+                      {paginatedTransactions.map((tx) => {
+                        const isSelected = selectedTx && selectedTx.tx_id === tx.tx_id;
+                        const score = Number(tx.risk_score || 0);
+                        const barColor =
+                          score >= 80 ? "bg-rose-500" : score >= 50 ? "bg-orange-400" : "bg-emerald-500";
+                        return (
+                          <tr
+                            key={tx.tx_id}
+                            onClick={() => setSelectedTx(tx)}
+                            className={`border-b border-zinc-100 dark:border-zinc-800 cursor-pointer transition-colors ${
+                              isSelected
+                                ? "bg-blue-50 dark:bg-blue-900/40 hover:bg-blue-100 dark:hover:bg-blue-900/60"
+                                : "text-zinc-900 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                            }`}
+                          >
+                            <td className="py-3 px-4">
+                              <span className="font-mono text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 rounded px-1.5 py-0.5 font-semibold">
+                                {tx.tx_id}
+                              </span>
+                              <div className="text-[11px] text-zinc-500 mt-1">
+                                {formatDateReadable(tx.tx_timestamp)}
+                              </div>
+                            </td>
+                            <td className="py-3 px-4">
+                              <div className="font-semibold text-zinc-900 dark:text-zinc-100">
+                                {tx.customer_name || tx.customer_id}
+                              </div>
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                <span className="font-mono text-[10px] text-zinc-500">{tx.customer_id}</span>
+                                {tx.pep_flag && (
+                                  <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300">
+                                    PEP
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="py-3 px-4">
+                              <div className="font-medium">{tx.merchant_name}</div>
+                              <div className="text-[11px] text-zinc-500 font-mono mt-0.5">
+                                {tx.channel} • {tx.country_code} • {tx.fraud_typology}
+                              </div>
+                            </td>
+                            <td className="py-3 px-4 text-right font-mono font-bold">
+                              {formatEur(tx.amount_eur)}
+                            </td>
+                            <td className="py-3 px-4">
+                              <div className="flex items-center justify-between text-[11px] font-mono mb-1">
+                                <span>{score}/100</span>
+                                <span className="text-zinc-400">{tx.velocity_1h} tx/h</span>
+                              </div>
+                              <div className="w-full h-2 bg-zinc-700 rounded-sm overflow-hidden">
+                                <div
+                                  className={`h-full ${barColor} rounded-sm transition-all duration-300`}
+                                  style={{ width: `${score}%` }}
+                                />
+                              </div>
+                            </td>
+                            <td className="py-3 px-4">
+                              <span
+                                className={`inline-flex px-2 py-0.5 rounded text-[11px] font-mono font-semibold ${
+                                  tx.status === "BLOCKED"
+                                    ? "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300"
+                                    : tx.status === "FLAGGED"
+                                    ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
+                                    : tx.status === "SETTLED"
+                                    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
+                                    : "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
+                                }`}
+                              >
+                                {tx.status}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Pagination Controls (Icon-only buttons as specified) */}
+                <div className="p-3 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between text-xs text-zinc-500">
+                  <span>
+                    Pagina <strong className="font-mono">{currentPage}</strong> di{" "}
+                    <strong className="font-mono">{totalPages}</strong>
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => setCurrentPage(1)}
+                      disabled={currentPage === 1}
+                      aria-label="First Page"
+                      className="p-1.5 rounded border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <Icon name="chevronsLeft" className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      aria-label="Previous Page"
+                      className="p-1.5 rounded border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <Icon name="chevronLeft" className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                      aria-label="Next Page"
+                      className="p-1.5 rounded border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <Icon name="chevronRight" className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setCurrentPage(totalPages)}
+                      disabled={currentPage === totalPages}
+                      aria-label="Last Page"
+                      className="p-1.5 rounded border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <Icon name="chevronsRight" className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Conditional Investigation/Details Side Panel (w-1/3 when selected) */}
+              {selectedTx && (
+                <div className="w-full lg:w-1/3 transition-all duration-300 bg-white dark:bg-[#0c0c0f] border border-zinc-200 dark:border-zinc-800 rounded-xl p-5 shadow-sm space-y-4">
+                  <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-3">
+                    <div>
+                      <span className="text-xs font-semibold uppercase tracking-wider text-blue-500">
+                        Dossier Indagine Transazione &amp; AML
+                      </span>
+                      <h3 className="text-lg font-bold font-mono text-zinc-950 dark:text-zinc-50">
+                        {selectedTx.tx_id} • {formatEur(selectedTx.amount_eur)}
+                      </h3>
+                    </div>
+                    <button
+                      onClick={() => setSelectedTx(null)}
+                      aria-label="Close Investigation Panel"
+                      className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                    >
+                      <Icon name="x" className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="space-y-2.5 text-xs">
+                    <div className="bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md p-3">
+                      <div className="text-zinc-500 dark:text-zinc-400 uppercase text-[10px] font-semibold">
+                        Cliente &amp; Profilo KYC / Sanctions (Agente A2A #2)
+                      </div>
+                      <div className="font-bold text-sm text-zinc-950 dark:text-zinc-100 mt-0.5">
+                        {selectedTx.customer_name} ({selectedTx.customer_id})
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 mt-2 font-mono text-[11px]">
+                        <div>KYC: <span className="text-amber-500">{selectedTx.kyc_status || "VERIFIED"}</span></div>
+                        <div>OFAC: <span className="text-rose-400">{selectedTx.sanctions_screening || "CLEAR"}</span></div>
+                        <div>AUM: {formatEur(selectedTx.aum_eur)}</div>
+                        <div>Credito: {formatEur(selectedTx.credit_exposure_eur)}</div>
+                      </div>
+                    </div>
+
+                    <div className="bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md p-3">
+                      <div className="text-zinc-500 dark:text-zinc-400 uppercase text-[10px] font-semibold">
+                        Dettagli Bonifico &amp; Telemetria Rischio (Agente A2A #1)
+                      </div>
+                      <div className="mt-1 space-y-1 font-mono text-[11px]">
+                        <div>IBAN Origine: {selectedTx.account_iban}</div>
+                        <div>Controparte: {selectedTx.merchant_name} ({selectedTx.country_code})</div>
+                        <div>Tipologia Frode: <span className="text-rose-400">{selectedTx.fraud_typology}</span></div>
+                        <div>Risk Score: {selectedTx.risk_score}/100 • Velocità: {selectedTx.velocity_1h} tx/ora</div>
+                      </div>
+                    </div>
+
+                    {selectedTx.analyst_notes && (
+                      <div className="bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md p-3">
+                        <div className="text-zinc-500 dark:text-zinc-400 uppercase text-[10px] font-semibold">
+                          Alert Compliance ({selectedTx.regulation_framework || "EU_AMLD6"})
+                        </div>
+                        <p className="mt-1 text-zinc-800 dark:text-zinc-200 leading-relaxed">
+                          {selectedTx.analyst_notes}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Quick Deep-Dive via Multi-Agent A2A */}
+                  <button
+                    onClick={() =>
+                      handleInvokeGateway(
+                        `Esegui un'indagine approfondita A2A + BigQuery MCP sulla transazione ${selectedTx.tx_id} del cliente ${selectedTx.customer_id} (${selectedTx.customer_name}) verso ${selectedTx.merchant_name}.`,
+                        "custom_row_inspect",
+                        selectedTx.customer_id
+                      )
+                    }
+                    disabled={isInvoking}
+                    className="w-full bg-[#ffffff] dark:bg-[#262626] hover:bg-[#f8fafc] dark:hover:bg-zinc-800 text-[#2563eb] dark:text-[#60a5fa] border border-blue-500/40 rounded-[8px] px-[14px] py-[8px] text-xs font-semibold transition-colors flex items-center justify-center gap-1.5"
+                  >
+                    <Icon name="network" className="w-3.5 h-3.5" />
+                    Interroga i 2 Agenti A2A su {selectedTx.customer_id}
+                  </button>
+
+                  {/* Action Buttons (Approve / Reject-Block) */}
+                  <div className="pt-2 border-t border-zinc-200 dark:border-zinc-800 grid grid-cols-2 gap-2.5">
+                    <button
+                      onClick={() => handleAnalystAction(selectedTx.tx_id, "APPROVE")}
+                      disabled={isActionLoading}
+                      className="bg-emerald-500 hover:bg-emerald-600 text-white rounded-[8px] px-[12px] py-[8px] text-xs font-semibold transition-colors shadow-sm disabled:opacity-50"
+                    >
+                      Approva (SETTLED)
+                    </button>
+                    <button
+                      onClick={() => handleAnalystAction(selectedTx.tx_id, "BLOCK")}
+                      disabled={isActionLoading}
+                      className="bg-rose-500 hover:bg-rose-600 text-white rounded-[8px] px-[12px] py-[8px] text-xs font-semibold transition-colors shadow-sm disabled:opacity-50"
+                    >
+                      Blocca &amp; SAR (BLOCKED)
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* 6. APACHE ECHARTS ANALYTICAL VISUALIZATIONS (1 CHART PER ROW: grid-cols-1) */}
+          <section className="grid grid-cols-1 gap-6">
+            {/* Chart 1 */}
+            <div className="bg-white dark:bg-[#0c0c0f] rounded-xl border border-zinc-200 dark:border-zinc-800 p-5 shadow-sm">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                <div>
+                  <h3 className="text-base font-bold text-zinc-950 dark:text-zinc-50">
+                    Analisi BigQuery MCP: Volume Transazioni (k€) vs Fraud Risk Score per Operazione
+                  </h3>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                    Dati interrogati dall'Agente A2A #1 (`transaction_risk_analytics_agent`) sulla tabella `my-ca-test-486412.agentic_fsi_fraud_demo.transactions_ledger`.
+                  </p>
+                </div>
+                <span className="font-mono text-xs text-zinc-500 bg-zinc-100 dark:bg-zinc-800 rounded px-2 py-1">
+                  MCP Tool: execute_sql_readonly
+                </span>
+              </div>
+              <EChartBox option={bqFraudChartOption} height="340px" isDark={isDark} />
+            </div>
+
+            {/* Chart 2 */}
+            <div className="bg-white dark:bg-[#0c0c0f] rounded-xl border border-zinc-200 dark:border-zinc-800 p-5 shadow-sm">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                <div>
+                  <h3 className="text-base font-bold text-zinc-950 dark:text-zinc-50">
+                    {stressResult
+                      ? `Risultati Stress Test Concorrente Apigee & Model Armor (${stressResult.summary.total_sent} Richieste)`
+                      : "Profilo di Latenza per Hop: Chiamata Multi-Agente Valida vs Blocco Edge Cloud Model Armor"}
+                  </h3>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                    {stressResult
+                      ? `Token LLM risparmiati grazie a Model Armor + Apigee SpikeArrest + Semantic Cache: ${stressResult.summary.total_tokens_saved} token (${stressResult.summary.bq_queries_prevented} query BigQuery MCP evitate).`
+                      : "Dimostra come Model Armor fermi i prompt ostili in ~27ms sull'edge Apigee prima di invocare Gemini Enterprise, i 2 Agenti A2A e BigQuery MCP."}
+                  </p>
+                </div>
+                {stressResult && (
+                  <button
+                    onClick={() => setStressResult(null)}
+                    className="text-xs text-blue-500 hover:underline font-mono"
+                  >
+                    Mostra Confronto Hop Standard
+                  </button>
+                )}
+              </div>
+              <EChartBox option={gatewayTelemetryChartOption} height="340px" isDark={isDark} />
+            </div>
+          </section>
+
+          {/* MODAL: A2A AgentCard Viewer */}
+          {agentCardModal && (
+            <div className="fixed inset-0 bg-zinc-950/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+              <div className="bg-[#ffffff] dark:bg-[#0c0c0f] rounded-[12px] border border-zinc-200 dark:border-zinc-800 shadow-xl w-full max-w-2xl p-6 space-y-4">
+                <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-3">
+                  <div>
+                    <span className="text-xs font-mono text-blue-500 uppercase">A2A Discovery Protocol (/.well-known/agent.json)</span>
+                    <h3 className="text-lg font-bold text-zinc-950 dark:text-zinc-50">{agentCardModal.name}</h3>
+                  </div>
+                  <button onClick={() => setAgentCardModal(null)} className="p-1 text-zinc-400 hover:text-zinc-200">
+                    <Icon name="x" className="w-5 h-5" />
+                  </button>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleViewAgentCard("transaction-risk")}
+                    className="text-xs font-mono px-3 py-1.5 rounded border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                  >
+                    Agente #1: Transaction &amp; Risk
+                  </button>
+                  <button
+                    onClick={() => handleViewAgentCard("compliance-portfolio")}
+                    className="text-xs font-mono px-3 py-1.5 rounded border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                  >
+                    Agente #2: Compliance &amp; Portfolio
+                  </button>
+                </div>
+                <pre className="bg-zinc-950 text-zinc-100 p-4 rounded-lg text-xs font-mono overflow-x-auto max-h-[380px] border border-zinc-800">
+                  {JSON.stringify(agentCardModal, null, 2)}
+                </pre>
+              </div>
+            </div>
+          )}
+
+          {/* MODAL: Apigee & Model Armor Policy Configuration */}
+          {showSettingsModal && (
+            <div className="fixed inset-0 bg-zinc-950/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+              <div className="bg-[#ffffff] dark:bg-[#0c0c0f] rounded-[12px] border border-zinc-200 dark:border-zinc-800 shadow-xl w-full max-w-md p-6 space-y-4">
+                <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-3">
+                  <h3 className="text-base font-bold text-zinc-950 dark:text-zinc-50">
+                    Configurazione Apigee X &amp; Cloud Model Armor
+                  </h3>
+                  <button onClick={() => setShowSettingsModal(false)} className="p-1 text-zinc-400 hover:text-zinc-200">
+                    <Icon name="x" className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="space-y-3 text-xs">
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-500 mb-1">
+                      Apigee Proxy Endpoint URL
+                    </label>
+                    <input
+                      type="text"
+                      value={gatewayConfig.apigee_endpoint}
+                      onChange={(e) => setGatewayConfig({ ...gatewayConfig, apigee_endpoint: e.target.value })}
+                      className="w-full bg-[#ffffff] dark:bg-[#09090b] border border-zinc-200 dark:border-zinc-800 rounded-[8px] px-[12px] py-[8px] text-xs font-mono text-zinc-950 dark:text-zinc-100"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-500 mb-1">
+                      Cloud Model Armor Template Resource
+                    </label>
+                    <input
+                      type="text"
+                      value={gatewayConfig.model_armor_template}
+                      onChange={(e) => setGatewayConfig({ ...gatewayConfig, model_armor_template: e.target.value })}
+                      className="w-full bg-[#ffffff] dark:bg-[#09090b] border border-zinc-200 dark:border-zinc-800 rounded-[8px] px-[12px] py-[8px] text-xs font-mono text-zinc-950 dark:text-zinc-100"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-500 mb-1">
+                      Utente Autenticato (`&lt;Identifier ref="extracted.userEmail"/&gt;`)
+                    </label>
+                    <input
+                      type="text"
+                      value={gatewayConfig.authenticated_user || "admin@cviscontino.altostrat.com"}
+                      onChange={(e) => setGatewayConfig({ ...gatewayConfig, authenticated_user: e.target.value })}
+                      className="w-full bg-[#ffffff] dark:bg-[#09090b] border border-zinc-200 dark:border-zinc-800 rounded-[8px] px-[12px] py-[8px] text-xs font-mono text-zinc-950 dark:text-zinc-100"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-zinc-500 mb-1">
+                        Apigee `&lt;LLMTokenQuota&gt;` (tok/min)
+                      </label>
+                      <input
+                        type="number"
+                        value={gatewayConfig.token_quota_per_min || 1500}
+                        onChange={(e) => setGatewayConfig({ ...gatewayConfig, token_quota_per_min: Number(e.target.value) })}
+                        className="w-full bg-[#ffffff] dark:bg-[#09090b] border border-zinc-200 dark:border-zinc-800 rounded-[8px] px-[12px] py-[8px] text-xs font-mono text-zinc-950 dark:text-zinc-100"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-zinc-500 mb-1">
+                        SpikeArrest (req/min)
+                      </label>
+                      <input
+                        type="number"
+                        value={gatewayConfig.spike_arrest_rpm}
+                        onChange={(e) => setGatewayConfig({ ...gatewayConfig, spike_arrest_rpm: Number(e.target.value) })}
+                        className="w-full bg-[#ffffff] dark:bg-[#09090b] border border-zinc-200 dark:border-zinc-800 rounded-[8px] px-[12px] py-[8px] text-xs font-mono text-zinc-950 dark:text-zinc-100"
+                      />
+                    </div>
+                  </div>
+                  <label className="flex items-center gap-2 pt-1 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={gatewayConfig.semantic_cache_enabled}
+                      onChange={(e) => setGatewayConfig({ ...gatewayConfig, semantic_cache_enabled: e.target.checked })}
+                      className="rounded accent-blue-500"
+                    />
+                    <span>Abilita Apigee Semantic Caching</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={gatewayConfig.sdp_mask_iban_output}
+                      onChange={(e) => setGatewayConfig({ ...gatewayConfig, sdp_mask_iban_output: e.target.checked })}
+                      className="rounded accent-blue-500"
+                    />
+                    <span>Abilita Mascheramento SDP IBAN in Output (Model Armor)</span>
+                  </label>
+                </div>
+
+                <div className="pt-3 border-t border-zinc-200 dark:border-zinc-800 flex justify-end gap-2">
+                  <button
+                    onClick={async () => {
+                      const res = await fetch("/api/gateway/config", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(gatewayConfig),
+                      });
+                      const data = await res.json();
+                      if (data.user_token_quota) setUserTokenQuota(data.user_token_quota);
+                      setShowSettingsModal(false);
+                    }}
+                    className="bg-[#059669] hover:bg-[#047857] text-[#000000] rounded-[8px] px-[16px] py-[8px] text-xs font-semibold transition-colors shadow-sm"
+                  >
+                    Salva Policy
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<App />);
+  </script>
+</body>
+</html>

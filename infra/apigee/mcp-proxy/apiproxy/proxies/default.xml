@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ProxyEndpoint name="default">
+    <Description>Apigee X MCP Gateway for BigQuery Remote MCP Server (JSON-RPC 2.0)</Description>
+    <PreFlow name="PreFlow">
+        <Request>
+            <!-- 1. Protect BigQuery MCP Server from Agent Loops / Runaway Queries -->
+            <Step>
+                <Name>SA-MCP-RateLimit</Name>
+            </Step>
+            <!-- 2. Extract JSON-RPC method, MCP tool name, and SQL query argument -->
+            <Step>
+                <Name>EV-ExtractMCPMethodAndTool</Name>
+            </Step>
+            <!-- 3. Enforce Read-Only MCP Tool Whitelist (Block execute_sql / DDL / DML) -->
+            <Step>
+                <Name>RF-BlockMutatingMCPTool</Name>
+                <Condition>(mcp.method = "tools/call") and (mcp.toolName != "execute_sql_readonly") and (mcp.toolName != "get_table_info") and (mcp.toolName != "list_table_ids") and (mcp.toolName != "list_dataset_ids")</Condition>
+            </Step>
+            <!-- 4. Inspect SQL Query via Cloud Model Armor before sending to BigQuery MCP -->
+            <Step>
+                <Name>SC-ModelArmor-InspectSQL</Name>
+                <Condition>(mcp.method = "tools/call") and (mcp.toolName = "execute_sql_readonly")</Condition>
+            </Step>
+            <!-- 5. Inject GCP Quota Project & MCP Telemetry Headers -->
+            <Step>
+                <Name>AM-SetBigQueryMCPHeaders</Name>
+            </Step>
+        </Request>
+        <Response/>
+    </PreFlow>
+    <HTTPProxyConnection>
+        <BasePath>/v1/mcp/bigquery</BasePath>
+    </HTTPProxyConnection>
+    <RouteRule name="route-to-bigquery-mcp">
+        <TargetEndpoint>bigquery-remote-mcp</TargetEndpoint>
+    </RouteRule>
+</ProxyEndpoint>

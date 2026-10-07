@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ProxyEndpoint name="default">
+    <Description>Apigee X + Model Armor Mediated A2A Endpoint for agent-2-compliance-aml-kyc</Description>
+    <PreFlow name="PreFlow">
+        <Request>
+            <Step>
+                <Name>SA-A2A-SpikeArrest</Name>
+            </Step>
+            <Step>
+                <Name>EV-ExtractA2ATaskPayload</Name>
+                <Condition>request.verb = "POST"</Condition>
+            </Step>
+            <Step>
+                <Name>SC-ModelArmor-SanitizeA2AInput</Name>
+                <Condition>request.verb = "POST"</Condition>
+            </Step>
+            <Step>
+                <Name>EV-ExtractArmorVerdict</Name>
+                <Condition>request.verb = "POST"</Condition>
+            </Step>
+            <Step>
+                <Name>RF-ModelArmorBlockedA2A</Name>
+                <Condition>(request.verb = "POST") and (modelarmor.filterMatchState = "MATCH_FOUND")</Condition>
+            </Step>
+        </Request>
+        <Response/>
+    </PreFlow>
+    <PostFlow name="PostFlow">
+        <Request/>
+        <Response>
+            <Step>
+                <Name>SC-ModelArmor-SanitizeA2AOutput</Name>
+                <Condition>request.verb = "POST"</Condition>
+            </Step>
+            <Step>
+                <Name>AM-InjectA2AGovernanceHeaders</Name>
+            </Step>
+        </Response>
+    </PostFlow>
+    <HTTPProxyConnection>
+        <BasePath>/v1/a2a/agent-2</BasePath>
+    </HTTPProxyConnection>
+    <RouteRule name="route-to-a2a-subagent"/>
+</ProxyEndpoint>

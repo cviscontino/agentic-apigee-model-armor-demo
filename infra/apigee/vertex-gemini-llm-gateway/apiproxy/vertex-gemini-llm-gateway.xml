@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<APIProxy revision="2" name="vertex-gemini-llm-gateway">
+    <DisplayName>Vertex AI Gemini 2.5 LLM Proxy (OOTB LLMTokenQuota — admin@cviscontino.altostrat.com)</DisplayName>
+    <Description>Apigee X AI Gateway Proxy to Vertex AI Gemini 2.5 Flash (:generateContent) with Out-of-the-Box LLMTokenQuota (EnforceOnly + CountOnly on $.usageMetadata.totalTokenCount) for admin@cviscontino.altostrat.com and Cloud Model Armor</Description>
+    <BasePaths>/v1/llm/gemini</BasePaths>
+    <Policies>
+        <Policy>VA-VerifyApiKey</Policy>
+        <Policy>EV-ExtractUserIdentity</Policy>
+        <Policy>Q-TokenQuota-Enforce</Policy>
+        <Policy>SC-ModelArmor-SanitizeInput</Policy>
+        <Policy>AM-CleanTargetRequest</Policy>
+        <Policy>Q-TokenQuota-Count</Policy>
+        <Policy>AM-InjectGeminiQuotaHeaders</Policy>
+    </Policies>
+    <ProxyEndpoints>
+        <ProxyEndpoint>default</ProxyEndpoint>
+    </ProxyEndpoints>
+    <TargetEndpoints>
+        <TargetEndpoint>vertex-ai-gemini-target</TargetEndpoint>
+    </TargetEndpoints>
+</APIProxy>

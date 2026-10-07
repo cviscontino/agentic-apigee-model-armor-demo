@@ -1,0 +1,293 @@
+renderOrder: nodes-first
+direction: down
+
+const GcpBlue = "#1a73e8"
+const GcpGreen = "#1e8e3e"
+const GcpRed = "#d93025"
+const GcpPurple = "#9334e6"
+const EmeraldTeal = "#0d9488"
+const DarkSlate = "#202124"
+const SubText = "#5f6368"
+const CardBorder = "#dadce0"
+const BusStroke = "#334155"
+const SurfaceWhite = "#ffffff"
+
+Style @Ghost {
+  fill: transparent, strokeWidth: 0, fontColor: transparent, padding: 0
+}
+Style @ArchitectureRoot {
+  fill: "#ffffff", strokeColor: "#c2d7f5", strokeWidth: 2, borderRadius: 16,
+  padding: 24, gap: 18, fontColor: "#202124", fontSize: 22, labelWeight: bold,
+  icon: "GoogleCloud", iconSize: 28
+}
+Style @PerimeterZone {
+  fill: "#f0f6ff", strokeColor: "#8ab4f8", strokeWidth: 1.5, borderRadius: 12,
+  padding: 16, gap: 16, fontColor: $DarkSlate, fontSize: 15.5, labelWeight: bold
+}
+Style @ExecutionZone {
+  fill: "#faf5ff", strokeColor: "#c084fc", strokeWidth: 1.5, borderRadius: 12,
+  padding: 16, gap: 16, fontColor: $DarkSlate, fontSize: 15.5, labelWeight: bold
+}
+Style @GovernanceZone {
+  fill: "#f0fdf4", strokeColor: "#81c995", strokeWidth: 1.5, borderRadius: 12,
+  padding: 16, gap: 14, fontColor: $DarkSlate, fontSize: 15.5, labelWeight: bold
+}
+Style @ResourceZone {
+  fill: "#fffbeb", strokeColor: "#fde293", strokeWidth: 1.5, borderRadius: 12,
+  padding: 16, gap: 16, fontColor: $DarkSlate, fontSize: 15.5, labelWeight: bold
+}
+Style @PurpleSubGroup {
+  fill: "#ffffff", strokeColor: "#c084fc", strokeWidth: 1, borderRadius: 10,
+  padding: 12, gap: 10, fontColor: $DarkSlate, fontSize: 13, labelWeight: bold
+}
+Style @GreenSubGroup {
+  fill: "#ffffff", strokeColor: "#81c995", strokeWidth: 1, borderRadius: 10,
+  padding: 10, gap: 7, fontColor: $DarkSlate, fontSize: 13, labelWeight: bold
+}
+Style @CoralSubGroup {
+  fill: "#fff5f5", strokeColor: "#f6aea9", strokeWidth: 1, borderRadius: 10,
+  padding: 10, gap: 7, fontColor: $DarkSlate, fontSize: 13, labelWeight: bold
+}
+Style @AmberSubGroup {
+  fill: "#ffffff", strokeColor: "#fbbc04", strokeWidth: 1, borderRadius: 10,
+  padding: 12, gap: 12, fontColor: $DarkSlate, fontSize: 13, labelWeight: bold
+}
+Style @ActorCard {
+  width: 196, height: 58,
+  fill: $SurfaceWhite, strokeColor: $CardBorder, strokeWidth: 1, borderRadius: 8,
+  fontColor: $DarkSlate, subFontColor: $SubText,
+  fontSize: 14, subFontSize: 11, labelWeight: bold,
+  textAlign: "left", textVAlign: "middle",
+  iconPosition: "left", iconSize: 28, padding: 10, shadow: true
+}
+Style @ProductCard {
+  width: 186, height: 58,
+  fill: $SurfaceWhite, strokeColor: $CardBorder, strokeWidth: 1, borderRadius: 8,
+  fontColor: $DarkSlate, subFontColor: $SubText,
+  fontSize: 13.5, subFontSize: 11, labelWeight: bold,
+  textAlign: "left", textVAlign: "middle",
+  iconPosition: "left", iconSize: 28, padding: 10, shadow: true
+}
+Style @GatewayHubCard {
+  base: @ProductCard,
+  width: 214, height: 64, strokeColor: $GcpBlue, strokeWidth: 2,
+  fontSize: 14, subFontSize: 11, iconSize: 30, padding: 12
+}
+Style @ArmorHubCard {
+  base: @ProductCard,
+  width: 214, height: 64, strokeColor: $GcpRed, strokeWidth: 2,
+  fontSize: 14, subFontSize: 11, iconSize: 30, padding: 12
+}
+Style @PolicyPill {
+  width: 228, height: 32,
+  fill: $SurfaceWhite, strokeColor: "#9aa0a6", strokeWidth: 1, borderRadius: 16,
+  fontColor: $DarkSlate, fontSize: 12.5, labelWeight: bold,
+  textAlign: "left", textVAlign: "middle",
+  iconPosition: "left", iconSize: 16, padding: 10, shadow: true
+}
+
+Zone @GoogleCloudEnterprise {
+  title: "Google Cloud"
+  subtitle: "Agentic Architecture Demo · Apigee X + Cloud Model Armor + Gemini Enterprise + A2A + BigQuery MCP (cvisco-agentic-demo)"
+  style: @ArchitectureRoot
+  layout: matrix
+  areas: [
+    "z1 z1 z1 z1 z1",
+    "z2 z2 z2 z3 z3",
+    "z4 z4 z4 z4 z4"
+  ]
+  sizes: ["1.05fr", "1.05fr", "1.05fr", "0.95fr", "0.95fr"]
+  gap: 20
+
+  Zone @Zone1_Perimeter {
+    area: "z1"
+    title: "1. Client & Playground Perimeter (Cloud Run SPA · europe-west1)"
+    style: @PerimeterZone
+    layout: row, gap: 20, align: center, justify: center
+
+    [react_cockpit: "Agentic Cockpit UI" | "React 19 + ECharts SPA"] {
+      style: @ActorCard, width: 210, icon: "CloudRun",
+      description: "Frontend SPA hosted on Cloud Run (agentic-fsi-demo-1070899805958.europe-west1.run.app)"
+    }
+    [valid_scenario: "Scenario A: Valid" | "FSI Fraud & AML Analysis"] {
+      style: @ActorCard, width: 210, icon: "ShieldCheck",
+      description: "Legitimate multi-agent investigation routed through Apigee, Model Armor, A2A, and BigQuery MCP"
+    }
+    [attack_scenario: "Scenario B: Attack" | "Prompt Injection / PII / SQLi"] {
+      style: @ActorCard, width: 216, icon: "ShieldAlert",
+      description: "Adversarial jailbreak, IBAN exfiltration, or SQL injection blocked by Cloud Model Armor (HTTP 422/403)"
+    }
+    [stress_scenario: "Scenario C: Stress" | "25x Burst Load Simulator"] {
+      style: @ActorCard, width: 210, icon: "Activity",
+      description: "High-concurrency traffic wave testing Apigee SpikeArrest (429), Token Quota, and Semantic Cache"
+    }
+  }
+
+  Zone @Zone2_Governance {
+    area: "z2"
+    title: "2. Apigee X AI Gateway & Cloud Model Armor (agentic-prod · europe-west1)"
+    style: @GovernanceZone
+    layout: column, gap: 14, align: center
+
+    Zone @ApigeeProxiesRow {
+      style: @Ghost, layout: row, gap: 16, align: center, justify: center
+
+      [apigee_northbound: "agentic-ai-gateway" | "Northbound (/v1/agentic-fsi)"] {
+        style: @GatewayHubCard, width: 218, icon: "Apigee",
+        description: "Apigee X Northbound Proxy mediating Client requests to Gemini Enterprise with Model Armor & Quotas"
+      }
+      [apigee_a2a_gw: "a2a-subagents-gateway" | "East-West Mesh (/v1/a2a)"] {
+        style: @GatewayHubCard, width: 218, icon: "Apigee",
+        description: "Apigee X A2A Mesh Proxy mediating Agent Card discovery and JSON-RPC tasks/send between Agents"
+      }
+      [apigee_mcp_gw: "bigquery-mcp-gateway" | "Southbound (/v1/mcp/bigquery)"] {
+        style: @GatewayHubCard, width: 218, icon: "Apigee",
+        description: "Apigee X MCP Proxy enforcing read-only BigQuery MCP tool whitelisting and SQL Model Armor inspection"
+      }
+    }
+
+    Zone @GuardrailsAndArmorRow {
+      style: @Ghost, layout: row, gap: 16, align: center, justify: center
+
+      Zone @ApigeePoliciesBox {
+        title: "Apigee X Gateway Policies"
+        style: @GreenSubGroup, layout: column, gap: 7, align: center
+        [pol_spike: "SA-SpikeArrest (30pm / 429)"] { style: @PolicyPill, width: 216, icon: "Apigee" }
+        [pol_quota: "Q-TokenQuota (50k/hr) & Cache"] { style: @PolicyPill, width: 216, icon: "APIAnalytics" }
+        [pol_mcp_ro: "RF-BlockMutatingMCPTool (RO)"] { style: @PolicyPill, width: 216, icon: "Lock" }
+      }
+
+      [model_armor_tpl: "Cloud Model Armor\nfsi-agent-armor-strict" | "sanitizeUserPrompt & Response"] {
+        style: @ArmorHubCard, width: 214, icon: "ModelArmor",
+        description: "Live Cloud Model Armor template in europe-west1 inspecting both Input Prompts, SQL, and Output Responses"
+      }
+
+      Zone @ArmorDetectorsBox {
+        title: "Model Armor Active Detectors"
+        style: @CoralSubGroup, layout: column, gap: 7, align: center
+        [det_pi: "Prompt Injection & Jailbreak"] { style: @PolicyPill, width: 216, icon: "SecurityCommandCenter" }
+        [det_sdp: "Sensitive Data (SDP: IBAN/CC)"] { style: @PolicyPill, width: 216, icon: "DLP" }
+        [det_rai: "RAI + Malicious URI Filter"] { style: @PolicyPill, width: 216, icon: "Shield" }
+      }
+    }
+  }
+
+  Zone @Zone3_Execution {
+    area: "z3"
+    title: "3. Multi-Agent Runtime & A2A Mesh (Cloud Run + Agent Registry)"
+    style: @ExecutionZone
+    layout: row, gap: 28, align: center, justify: center
+
+    Zone @OrchestratorAndRegistryCol {
+      style: @Ghost, layout: column, gap: 14, align: center
+
+      [ge_root_agent: "Gemini Enterprise\nRoot Orchestrator" | "ge-root-orchestrator"] {
+        style: @GatewayHubCard, width: 204, strokeColor: $GcpPurple, icon: "Gemini",
+        description: "Supervisor Agent decomposing FSI queries into parallel A2A tasks and synthesizing executive risk insights"
+      }
+
+      Zone @RegistryBox {
+        title: "Google Cloud Agent Registry"
+        style: @PurpleSubGroup, width: 204, layout: column, align: center, justify: center
+        [agent_registry: "Agent Registry" | "3 A2A Cards + 2 MCPs"] {
+          style: @ProductCard, width: 180, icon: "AgentRegistry",
+          description: "agentregistry.googleapis.com storing A2A v0.3.0 Agent Cards and MCP Server Tool Specs"
+        }
+      }
+    }
+
+    Zone @A2ASubAgentsBox {
+      title: "Specialized Sub-Agents (A2A v0.3.0 JSON-RPC)"
+      style: @PurpleSubGroup, width: 268, layout: column, gap: 14, align: center, justify: center
+
+      [agent_1_risk: "Agent 1: Tx & Risk" | "agent-1-tx-risk-analytics"] {
+        style: @ProductCard, width: 242, icon: "VertexAI",
+        description: "A2A Sub-Agent analyzing real-time payment velocity, structuring, and high-risk corridors via BigQuery MCP"
+      }
+      [agent_2_aml: "Agent 2: AML & KYC" | "agent-2-compliance-aml-kyc"] {
+        style: @ProductCard, width: 242, icon: "Agents",
+        description: "A2A Sub-Agent auditing AML alerts, PEP exposure, and customer portfolio risk via BigQuery MCP"
+      }
+    }
+  }
+
+  Zone @Zone4_Resources {
+    area: "z4"
+    title: "4. BigQuery MCP Servers & Enterprise FSI Data Foundation (cvisco-agentic-demo · europe-west1)"
+    style: @ResourceZone
+    layout: matrix, cols: 3, sizes: ["1.05fr", "1.45fr", "0.95fr"], gap: 18, align: center
+
+    Zone @McpServersSubZone {
+      title: "Registered BigQuery MCP Servers (JSON-RPC 2.0)"
+      style: @AmberSubGroup, layout: row, gap: 12, align: center, justify: center
+      [fsi_mcp_server: "fsi-bigquery-mcp-gateway" | "execute_sql_readonly (RO)"] {
+        style: @ProductCard, width: 196, icon: "MCPTools",
+        description: "Apigee-governed MCP Server registered in Agent Registry exposing read-only SQL & schema tools"
+      }
+      [gcp_bq_mcp: "bigquery.googleapis.com" | "Managed Remote BQ MCP"] {
+        style: @ProductCard, width: 192, icon: "BigQuery",
+        description: "Native Google Cloud Remote BigQuery MCP Server (https://bigquery.googleapis.com/mcp)"
+      }
+    }
+
+    Zone @BigQueryDatasetSubZone {
+      title: "BigQuery Dataset: agentic_fsi_fraud_demo (3 Live Tables)"
+      style: @AmberSubGroup, layout: row, gap: 12, align: center, justify: center
+      [bq_tx_ledger: "transactions_ledger" | "SEPA / SWIFT & Risk Score"] {
+        style: @ProductCard, width: 180, icon: "BigQuery"
+      }
+      [bq_portfolios: "customer_portfolios" | "KYC Tier, PEP & IBAN"] {
+        style: @ProductCard, width: 176, icon: "BigQuery"
+      }
+      [bq_aml_alerts: "aml_compliance_alerts" | "SAR & Structuring Alerts"] {
+        style: @ProductCard, width: 180, icon: "BigQuery"
+      }
+    }
+
+    Zone @IdentityAuditSubZone {
+      title: "Service Identity & Job Attribution"
+      style: @AmberSubGroup, layout: row, gap: 12, align: center, justify: center
+      [apigee_sa: "apigee-model-armor-sa" | "OAuth2 GoogleAccessToken"] {
+        style: @ProductCard, width: 184, icon: "IAM"
+      }
+      [bq_audit_labels: "MCP Job Labels" | "goog-mcp-server: true"] {
+        style: @ProductCard, width: 172, icon: "CloudAuditLogs"
+      }
+    }
+  }
+}
+
+[Zone1_Perimeter] --> [apigee_northbound] {
+  color: $GcpBlue, strokeWidth: 2, sourceAnchor: "bottom", targetAnchor: "top", curve: "step",
+  label: "HTTPS / REST", labelRatio: 0.5, sequenceBadge: "1", badgeFill: $GcpBlue, badgeFontColor: $SurfaceWhite, badgeDistance: 0.3
+}
+[apigee_northbound] <--> [model_armor_tpl] {
+  color: $GcpRed, strokeWidth: 2, sourceAnchor: "bottom", targetAnchor: "top", curve: "step",
+  label: "Sanitize I/O", labelRatio: 0.5, sequenceBadge: "2", badgeFill: $GcpRed, badgeFontColor: $SurfaceWhite, badgeDistance: 0.35
+}
+[apigee_northbound] --> [ge_root_agent] {
+  color: $GcpBlue, strokeWidth: 2, sourceAnchor: "right", targetAnchor: "left", curve: "step",
+  label: "Prompt OK", labelRatio: 0.5, sequenceBadge: "3", badgeFill: $GcpBlue, badgeFontColor: $SurfaceWhite, badgeDistance: 0.35
+}
+[ge_root_agent] --> [A2ASubAgentsBox] {
+  color: $GcpPurple, strokeWidth: 2, sourceAnchor: "right", targetAnchor: "left", curve: "step",
+  label: "A2A JSON-RPC", labelRatio: 0.5, sequenceBadge: "4", badgeFill: $GcpPurple, badgeFontColor: $SurfaceWhite, badgeDistance: 0.35
+}
+[ge_root_agent] -.-> [RegistryBox] {
+  color: $BusStroke, strokeWidth: 1.8, dashed: true, sourceAnchor: "bottom", targetAnchor: "top", curve: "step",
+  label: "Discover", labelRatio: 0.5
+}
+[apigee_mcp_gw] --> [McpServersSubZone] {
+  color: $EmeraldTeal, strokeWidth: 2, sourceAnchor: "bottom", targetAnchor: "top", curve: "step",
+  label: "MCP / JSON-RPC", labelRatio: 0.65, sequenceBadge: "5", badgeFill: $EmeraldTeal, badgeFontColor: $SurfaceWhite, badgeDistance: 0.3
+}
+[A2ASubAgentsBox] --> [BigQueryDatasetSubZone] {
+  color: $EmeraldTeal, strokeWidth: 2, sourceAnchor: "bottom", targetAnchor: "top", curve: "step",
+  label: "MCP SQL (RO)", labelRatio: 0.6, sequenceBadge: "6", badgeFill: $EmeraldTeal, badgeFontColor: $SurfaceWhite, badgeDistance: 0.3
+}
+[McpServersSubZone] --> [BigQueryDatasetSubZone] {
+  color: $GcpGreen, strokeWidth: 2, sourceAnchor: "right", targetAnchor: "left", curve: "step"
+}
+[BigQueryDatasetSubZone] -.-> [IdentityAuditSubZone] {
+  color: $BusStroke, strokeWidth: 1.8, dashed: true, sourceAnchor: "right", targetAnchor: "left", curve: "step"
+}

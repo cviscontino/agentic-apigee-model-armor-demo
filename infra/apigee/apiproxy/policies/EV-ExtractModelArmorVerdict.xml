@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ExtractVariables async="false" continueOnError="false" enabled="true" name="EV-ExtractModelArmorVerdict">
+    <DisplayName>EV-ExtractModelArmorVerdict</DisplayName>
+    <Source clearPayload="false">modelArmorInputResponse</Source>
+    <JSONPayload>
+        <Variable name="filterMatchState" type="string">
+            <JSONPath>$.sanitizationResult.filterMatchState</JSONPath>
+        </Variable>
+    </JSONPayload>
+    <VariablePrefix>modelArmor</VariablePrefix>
+</ExtractVariables>

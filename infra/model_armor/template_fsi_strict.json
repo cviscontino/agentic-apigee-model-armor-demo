@@ -1,0 +1,52 @@
+{
+  "name": "projects/cvisco-agentic-demo/locations/europe-west1/templates/fsi-agent-armor-strict",
+  "filterConfig": {
+    "piAndJailbreakFilterSettings": {
+      "filterEnforcement": "ENABLED",
+      "confidenceLevel": "LOW_AND_ABOVE"
+    },
+    "maliciousUriFilterSettings": {
+      "filterEnforcement": "ENABLED"
+    },
+    "sdpSettings": {
+      "basicConfig": {
+        "filterEnforcement": "ENABLED"
+      }
+    },
+    "raiSettings": {
+      "raiFilters": [
+        {
+          "filterType": "HATE_SPEECH",
+          "confidenceLevel": "MEDIUM_AND_ABOVE"
+        },
+        {
+          "filterType": "DANGEROUS",
+          "confidenceLevel": "LOW_AND_ABOVE"
+        },
+        {
+          "filterType": "HARASSMENT",
+          "confidenceLevel": "MEDIUM_AND_ABOVE"
+        },
+        {
+          "filterType": "SEXUALLY_EXPLICIT",
+          "confidenceLevel": "MEDIUM_AND_ABOVE"
+        }
+      ]
+    }
+  },
+  "templateMetadata": {
+    "MultiLanguageDetection": {
+      "enableMultiLanguageDetection": true
+    },
+    "logTemplateOperations": true,
+    "logSanitizeOperations": true,
+    "customPromptSafetyErrorCode": 422,
+    "customPromptSafetyErrorMessage": "Blocked by Google Cloud Model Armor: Prompt violates FSI Security & Responsible AI Governance Policy."
+  },
+  "labels": {
+    "environment": "production-demo",
+    "vertical": "financial-services",
+    "gateway": "apigee-x",
+    "architecture": "ge-a2a-bq-mcp"
+  }
+}

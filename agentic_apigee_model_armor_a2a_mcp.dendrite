@@ -1,0 +1,289 @@
+renderOrder: nodes-first
+direction: down
+
+const CloudBlue = "#1a73e8"
+const CloudGreen = "#1e8e3e"
+const CloudRed = "#d93025"
+const CloudPurple = "#9334e6"
+const EmeraldTeal = "#0d9488"
+const DarkSlate = "#202124"
+const SubText = "#5f6368"
+const CardBorder = "#dadce0"
+const SurfaceWhite = "#ffffff"
+
+Style @Ghost {
+  fill: transparent, strokeWidth: 0, fontColor: transparent, padding: 0
+}
+Style @ArchitectureRoot {
+  fill: "#ffffff", strokeColor: "#c2d7f5", strokeWidth: 2, borderRadius: 16,
+  padding: 24, gap: 28, fontColor: "#202124", fontSize: 21, labelWeight: bold,
+  icon: "GoogleCloud", iconSize: 28
+}
+Style @PerimeterZone {
+  fill: "#f0f6ff", strokeColor: "#8ab4f8", strokeWidth: 1.5, borderRadius: 12,
+  padding: 16, gap: 16, fontColor: $DarkSlate, fontSize: 15, labelWeight: bold
+}
+Style @GovernanceZone {
+  fill: "#f0fdf4", strokeColor: "#81c995", strokeWidth: 2, borderRadius: 12,
+  padding: 18, gap: 18, fontColor: $DarkSlate, fontSize: 15.5, labelWeight: bold
+}
+Style @ExecutionZone {
+  fill: "#faf5ff", strokeColor: "#c084fc", strokeWidth: 1.5, borderRadius: 12,
+  padding: 18, gap: 22, fontColor: $DarkSlate, fontSize: 15, labelWeight: bold
+}
+Style @ResourceZone {
+  fill: "#fffbeb", strokeColor: "#fde293", strokeWidth: 1.5, borderRadius: 12,
+  padding: 18, gap: 16, fontColor: $DarkSlate, fontSize: 15, labelWeight: bold
+}
+Style @BlueSubGroup {
+  fill: "#ffffff", strokeColor: "#8ab4f8", strokeWidth: 1.2, borderRadius: 10,
+  padding: 14, gap: 10, fontColor: $DarkSlate, fontSize: 12.5, labelWeight: bold
+}
+Style @CoralSubGroup {
+  fill: "#fff5f5", strokeColor: "#f28b82", strokeWidth: 1.5, borderRadius: 10,
+  padding: 14, gap: 10, fontColor: $DarkSlate, fontSize: 12.5, labelWeight: bold
+}
+Style @PurpleSubGroup {
+  fill: "#ffffff", strokeColor: "#c084fc", strokeWidth: 1.2, borderRadius: 10,
+  padding: 14, gap: 10, fontColor: $DarkSlate, fontSize: 12.5, labelWeight: bold
+}
+Style @TealSubGroup {
+  fill: "#ffffff", strokeColor: "#5eead4", strokeWidth: 1.2, borderRadius: 10,
+  padding: 14, gap: 10, fontColor: $DarkSlate, fontSize: 12.5, labelWeight: bold
+}
+Style @AmberSubGroup {
+  fill: "#ffffff", strokeColor: "#fbbc04", strokeWidth: 1.2, borderRadius: 10,
+  padding: 14, gap: 10, fontColor: $DarkSlate, fontSize: 12.5, labelWeight: bold
+}
+Style @ActorCard {
+  width: 210, height: 56,
+  fill: $SurfaceWhite, strokeColor: $CardBorder, strokeWidth: 1, borderRadius: 8,
+  fontColor: $DarkSlate, subFontColor: $SubText,
+  fontSize: 13, subFontSize: 10.5, labelWeight: bold,
+  textAlign: "left", textVAlign: "middle",
+  iconPosition: "left", iconSize: 24, padding: 10, shadow: true
+}
+Style @ProductCard {
+  width: 232, height: 54,
+  fill: $SurfaceWhite, strokeColor: $CardBorder, strokeWidth: 1, borderRadius: 8,
+  fontColor: $DarkSlate, subFontColor: $SubText,
+  fontSize: 13, subFontSize: 10.5, labelWeight: bold,
+  textAlign: "left", textVAlign: "middle",
+  iconPosition: "left", iconSize: 26, padding: 10, shadow: true
+}
+Style @GatewayHubCard {
+  base: @ProductCard,
+  width: 240, height: 56, strokeColor: $CloudBlue, strokeWidth: 2,
+  fontSize: 13, subFontSize: 10.5, iconSize: 26, padding: 10
+}
+Style @ArmorHubCard {
+  base: @ProductCard,
+  width: 244, height: 56, strokeColor: $CloudRed, strokeWidth: 2,
+  fontSize: 13, subFontSize: 10.5, iconSize: 26, padding: 10
+}
+Style @PolicyPill {
+  width: 240, height: 48,
+  fill: $SurfaceWhite, strokeColor: "#9aa0a6", strokeWidth: 1, borderRadius: 8,
+  fontColor: $DarkSlate, subFontColor: $SubText,
+  fontSize: 12.5, subFontSize: 10.5, labelWeight: bold,
+  textAlign: "left", textVAlign: "middle",
+  iconPosition: "left", iconSize: 22, padding: 10, shadow: true
+}
+
+Zone @GoogleCloudEnterprise {
+  title: "Google Cloud"
+  subtitle: "Zero-Trust Agentic Architecture · Apigee OOTB <LLMTokenQuota> (admin@cviscontino.altostrat.com) + Model Armor + Vertex AI Gemini + A2A & BigQuery MCP"
+  style: @ArchitectureRoot
+  layout: matrix
+  areas: [
+    "z1 z1 z1 z1",
+    "z2 z2 z2 z2",
+    "z3 z3 z4 z4"
+  ]
+  sizes: ["1fr", "1fr", "1fr", "1fr"]
+  gap: 36
+
+  Zone @Zone1_Perimeter {
+    area: "z1"
+    title: "1. Client & Identity Perimeter (Authenticated User: admin@cviscontino.altostrat.com · Apigee App: agentic-cockpit-client-app)"
+    style: @PerimeterZone
+    layout: row, gap: 16, align: center, justify: center
+
+    [user_identity: "admin@cviscontino" | ".altostrat.com · X-User-Email"] {
+      style: @ActorCard, strokeColor: $CloudBlue, strokeWidth: 1.8, icon: "User",
+      description: "Utente autenticato la cui identità viene estratta da Apigee X (EV-ExtractUserPrompt -> extracted.userEmail) e usata come <Identifier> nella policy Out-of-the-Box <LLMTokenQuota>."
+    }
+    [react_cockpit: "Agentic Cockpit UI" | "React 19 + ECharts SPA"] {
+      style: @ActorCard, icon: "CloudRun"
+    }
+    [valid_scenario: "Scenario A: Valid" | "Gemini + A2A + BigQuery MCP"] {
+      style: @ActorCard, icon: "ShieldCheck"
+    }
+    [attack_scenario: "Scenario B: Attack" | "Prompt Injection / PII / SQLi"] {
+      style: @ActorCard, icon: "ShieldAlert"
+    }
+    [stress_scenario: "Scenario C: Quota 429" | "LLMTokenQuota / Burst Test"] {
+      style: @ActorCard, icon: "Activity"
+    }
+  }
+
+  Zone @Zone2_Governance {
+    area: "z2"
+    title: "2. Apigee X AI Gateway & Cloud Model Armor — Central Mediation Hub (OOTB <LLMTokenQuota> · 5 Deployed Proxies · agentic-prod)"
+    style: @GovernanceZone
+    layout: matrix, cols: 4, sizes: ["1fr", "1.04fr", "1fr", "1fr"], gap: 18, align: center
+
+    Zone @NorthboundGatewayBox {
+      title: "Hop 1 & 4: Northbound & Gemini LLM Proxies"
+      style: @BlueSubGroup, layout: column, gap: 10, align: center, justify: center
+      [apigee_northbound: "Proxy 1: agentic-ai-gateway" | "/v1/agentic-fsi · Northbound Root"] {
+        style: @GatewayHubCard, icon: "Apigee",
+        description: "Hop 1 (Northbound): Media tutte le chiamate dal Client verso il Gemini Enterprise Root Orchestrator. Nessun accesso diretto al Root Agent è consentito."
+      }
+      [prod_northbound: "Proxy 2: vertex-gemini-llm-gateway" | "/v1/llm/gemini · OOTB <LLMTokenQuota>"] {
+        style: @GatewayHubCard, strokeColor: $CloudBlue, icon: "Apigee",
+        description: "Hop 4 (LLM Gateway): Media tutte le chiamate del Root Agent verso Vertex AI Gemini 2.5 Flash (:generateContent) con policy Out-of-the-Box <LLMTokenQuota> (Q-TokenQuota-Enforce + Q-TokenQuota-Count) per admin@cviscontino.altostrat.com."
+      }
+    }
+
+    Zone @ModelArmorCoreBox {
+      title: "Cloud Model Armor (All Hops)"
+      style: @CoralSubGroup, layout: column, gap: 10, align: center, justify: center
+      [model_armor_tpl: "Cloud Model Armor" | "Template: fsi-agent-armor-strict"] {
+        style: @ArmorHubCard, icon: "ModelArmor"
+      }
+      [armor_detectors: "PI/Jailbreak · SDP · RAI · URI" | "Blocks 422/403 & Masks IBAN"] {
+        style: @PolicyPill, width: 244, icon: "SecurityCommandCenter"
+      }
+    }
+
+    Zone @EastWestA2AGatewayBox {
+      title: "Hop 2: East-West A2A Proxies (Sub-Agents)"
+      style: @PurpleSubGroup, layout: column, gap: 10, align: center, justify: center
+      [apigee_a2a_1: "Proxy 3: a2a-agent-1-tx-risk" | "/v1/a2a/agent-1 · A2A + Armor"] {
+        style: @GatewayHubCard, strokeColor: $CloudPurple, icon: "Apigee",
+        description: "Hop 2a (East-West A2A): Media tutte le chiamate JSON-RPC tasks/send dal Root Orchestrator verso Agent 1 (Transaction & Risk). Invocazione diretta bloccata."
+      }
+      [apigee_a2a_2: "Proxy 4: a2a-agent-2-aml-kyc" | "/v1/a2a/agent-2 · A2A + Armor"] {
+        style: @GatewayHubCard, strokeColor: $CloudPurple, icon: "Apigee",
+        description: "Hop 2b (East-West A2A): Media tutte le chiamate JSON-RPC tasks/send dal Root Orchestrator verso Agent 2 (Compliance & AML/KYC). Invocazione diretta bloccata."
+      }
+    }
+
+    Zone @SouthboundMcpGatewayBox {
+      title: "Hop 3: Southbound MCP Proxy (BigQuery)"
+      style: @TealSubGroup, layout: column, gap: 10, align: center, justify: center
+      [apigee_mcp_gw: "Proxy 5: bigquery-mcp-gateway" | "/v1/mcp/bigquery · MCP + Armor"] {
+        style: @GatewayHubCard, strokeColor: $EmeraldTeal, icon: "Apigee",
+        description: "Hop 3 (Southbound MCP): Media tutte le chiamate JSON-RPC tools/call (execute_sql_readonly) dagli Agenti A2A 1 e 2 verso il BigQuery Remote MCP Server. Nessun agente interroga BigQuery MCP direttamente."
+      }
+      [prod_mcp: "Product: bq-mcp-server" | "Read-Only SQL + DLP Guardrail"] {
+        style: @PolicyPill, icon: "MCPTools"
+      }
+    }
+  }
+
+  Zone @Zone3_Execution {
+    area: "z3"
+    title: "3. Multi-Agent Runtime, Vertex AI Gemini & Cloud Agent Registry (Zero Direct Calls)"
+    style: @ExecutionZone
+    layout: matrix, cols: 2, sizes: ["1fr", "1fr"], gap: 22, align: center
+
+    Zone @OrchestratorAndRegistryCol {
+      title: "Root Orchestrator & Vertex AI Gemini"
+      style: @PurpleSubGroup, layout: column, gap: 10, align: center, justify: center
+      [ge_root_agent: "Gemini Enterprise Root" | "Via Proxy 1 (/v1/agentic-fsi)"] {
+        style: @GatewayHubCard, height: 50, strokeColor: $CloudPurple, icon: "Gemini"
+      }
+      [vertex_gemini: "Vertex AI Gemini 2.5" | "Via Proxy 2 (/v1/llm/gemini)"] {
+        style: @GatewayHubCard, height: 50, strokeColor: $CloudBlue, icon: "VertexAI",
+        description: "Step di sintesi esecutiva su Vertex AI Gemini (gemini-2.5-flash:generateContent), invocato esclusivamente tramite Proxy 2 (vertex-gemini-llm-gateway) con conteggio token OOTB Q-TokenQuota-Count."
+      }
+      [agent_registry: "Cloud Agent Registry" | "All URLs -> Apigee Proxies"] {
+        style: @ProductCard, width: 240, height: 48, icon: "AgentRegistry"
+      }
+    }
+
+    Zone @A2ASubAgentsBox {
+      title: "Specialist A2A Sub-Agents (Via Proxies 3 & 4)"
+      style: @PurpleSubGroup, layout: column, gap: 12, align: center, justify: center
+      [agent_1_risk: "Agent 1: Tx & Risk" | "Via Proxy 3 (/v1/a2a/agent-1)"] {
+        style: @ProductCard, width: 240, icon: "VertexAI"
+      }
+      [agent_2_aml: "Agent 2: AML & KYC" | "Via Proxy 4 (/v1/a2a/agent-2)"] {
+        style: @ProductCard, width: 240, icon: "Agents"
+      }
+    }
+  }
+
+  Zone @Zone4_Resources {
+    area: "z4"
+    title: "4. BigQuery Remote MCP Server & Enterprise FSI Data Foundation (Via Proxy 5)"
+    style: @ResourceZone
+    layout: matrix, cols: 2, sizes: ["1fr", "1.05fr"], gap: 18, align: center
+
+    Zone @McpAndIdentityCol {
+      title: "BigQuery MCP (Via Proxy 5)"
+      style: @AmberSubGroup, layout: column, gap: 12, align: center, justify: center
+      [gcp_bq_mcp: "BigQuery Remote MCP" | "Via Proxy 5 (/v1/mcp/bigquery)"] {
+        style: @GatewayHubCard, strokeColor: $CloudGreen, icon: "BigQuery"
+      }
+      [apigee_sa: "apigee-model-armor-sa" | "OAuth2 + goog-mcp-server: true"] {
+        style: @ProductCard, width: 240, icon: "IAM"
+      }
+    }
+
+    Zone @BigQueryDatasetSubZone {
+      title: "Dataset: agentic_fsi_fraud_demo"
+      style: @AmberSubGroup, layout: column, gap: 10, align: center, justify: center
+      [bq_tx_ledger: "transactions_ledger" | "SWIFT / SEPA & Risk Score"] {
+        style: @ProductCard, width: 240, height: 48, icon: "BigQuery"
+      }
+      [bq_portfolios: "customer_portfolios" | "KYC Tier, PEP & IBAN"] {
+        style: @ProductCard, width: 240, height: 48, icon: "BigQuery"
+      }
+      [bq_aml_alerts: "aml_compliance_alerts" | "EU AMLD6 & SAR Alerts"] {
+        style: @ProductCard, width: 240, height: 48, icon: "BigQuery"
+      }
+    }
+  }
+}
+
+[Zone1_Perimeter] --> [NorthboundGatewayBox] {
+  color: $CloudBlue, strokeWidth: 2, sourceAnchor: "bottom", targetAnchor: "top", curve: "step",
+  label: "JWT + Prompt", labelRatio: 0.55, sequenceBadge: "1", badgeFill: $CloudBlue, badgeFontColor: $SurfaceWhite, badgeDistance: 0.35
+}
+[NorthboundGatewayBox] <--> [ModelArmorCoreBox] {
+  color: $CloudRed, strokeWidth: 2, sourceAnchor: "right", targetAnchor: "left", curve: "step",
+  sequenceBadge: "2", badgeFill: $CloudRed, badgeFontColor: $SurfaceWhite, badgeDistance: 0.5
+}
+[NorthboundGatewayBox] <--> [OrchestratorAndRegistryCol] {
+  color: $CloudBlue, strokeWidth: 2, sourceAnchor: "bottom", targetAnchor: "top", curve: "step",
+  label: "Proxy 1 & 2 (LLMQuota)", labelRatio: 0.68, sequenceBadge: "3", badgeFill: $CloudBlue, badgeFontColor: $SurfaceWhite, badgeDistance: 0.25
+}
+[ge_root_agent] --> [EastWestA2AGatewayBox] {
+  color: $CloudPurple, strokeWidth: 2, sourceAnchor: "right", targetAnchor: "bottom", curve: "step",
+  sequenceBadge: "4", badgeFill: $CloudPurple, badgeFontColor: $SurfaceWhite, badgeDistance: 0.28
+}
+[ModelArmorCoreBox] <--> [EastWestA2AGatewayBox] {
+  color: $CloudRed, strokeWidth: 2, dashed: true, sourceAnchor: "right", targetAnchor: "left", curve: "step"
+}
+[apigee_a2a_2] --> [A2ASubAgentsBox] {
+  color: $CloudPurple, strokeWidth: 2, sourceAnchor: "bottom", targetAnchor: "top", curve: "step",
+  label: "Proxy 3 & 4 (A2A)", labelRatio: 0.72, sequenceBadge: "5", badgeFill: $CloudPurple, badgeFontColor: $SurfaceWhite, badgeDistance: 0.28
+}
+[agent_1_risk] --> [SouthboundMcpGatewayBox] {
+  color: $EmeraldTeal, strokeWidth: 2, sourceAnchor: "right", targetAnchor: "bottom", curve: "step",
+  sequenceBadge: "6", badgeFill: $EmeraldTeal, badgeFontColor: $SurfaceWhite, badgeDistance: 0.28
+}
+[EastWestA2AGatewayBox] <--> [SouthboundMcpGatewayBox] {
+  color: $CloudRed, strokeWidth: 1.8, dashed: true, sourceAnchor: "right", targetAnchor: "left", curve: "step"
+}
+[prod_mcp] --> [McpAndIdentityCol] {
+  color: $EmeraldTeal, strokeWidth: 2, sourceAnchor: "bottom", targetAnchor: "top", curve: "step",
+  label: "Proxy 5 (MCP SQL)", labelRatio: 0.72, sequenceBadge: "7", badgeFill: $EmeraldTeal, badgeFontColor: $SurfaceWhite, badgeDistance: 0.28
+}
+[McpAndIdentityCol] --> [BigQueryDatasetSubZone] {
+  color: $CloudGreen, strokeWidth: 2, sourceAnchor: "right", targetAnchor: "left", curve: "step",
+  sequenceBadge: "8", badgeFill: $CloudGreen, badgeFontColor: $SurfaceWhite, badgeDistance: 0.5
+}

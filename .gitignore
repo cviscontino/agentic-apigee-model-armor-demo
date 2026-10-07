@@ -1,0 +1,25 @@
+# Python & Virtual Environments
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Node / Frontend Build Artifacts (keep dist/ so Docker/Cloud Run works out of the box)
+frontend/node_modules/
+
+# Terraform State & Local Cache
+**/.terraform/
+**/.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+terraform/terraform.tfvars
+terraform/.build/
+
+# OS & Editor files
+.DS_Store
+.env
+*.log

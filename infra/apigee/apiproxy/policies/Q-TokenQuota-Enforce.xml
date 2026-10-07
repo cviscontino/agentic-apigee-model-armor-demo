@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<LLMTokenQuota async="false" continueOnError="false" enabled="true" name="Q-TokenQuota-Enforce" type="rollingwindow">
+    <DisplayName>Q-TokenQuota-Enforce (OOTB AI Policy)</DisplayName>
+    <SharedName>user-gemini-token-counter</SharedName>
+    <EnforceOnly>true</EnforceOnly>
+    <Identifier ref="extracted.userEmail"/>
+    <LLMModelSource>gemini-2.5-flash</LLMModelSource>
+    <Allow count="1500" countRef="extracted.tokenLimit"/>
+    <Interval>1</Interval>
+    <TimeUnit>minute</TimeUnit>
+    <Distributed>true</Distributed>
+    <Synchronous>true</Synchronous>
+</LLMTokenQuota>

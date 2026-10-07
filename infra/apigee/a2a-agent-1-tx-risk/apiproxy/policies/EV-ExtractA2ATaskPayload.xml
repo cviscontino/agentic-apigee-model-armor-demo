@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ExtractVariables async="false" continueOnError="true" enabled="true" name="EV-ExtractA2ATaskPayload">
+    <DisplayName>EV-ExtractA2ATaskPayload</DisplayName>
+    <Source clearPayload="false">request</Source>
+    <JSONPayload>
+        <Variable name="a2a.taskText">
+            <JSONPath>$.params.message.parts[0].text</JSONPath>
+        </Variable>
+    </JSONPayload>
+</ExtractVariables>

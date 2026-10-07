@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<TargetEndpoint name="vertex-ai-gemini-target">
+    <Description>Vertex AI Gemini 2.5 Flash (:generateContent) in europe-west1</Description>
+    <PreFlow name="PreFlow">
+        <Request>
+            <Step>
+                <Name>AM-CleanTargetRequest</Name>
+            </Step>
+        </Request>
+        <Response/>
+    </PreFlow>
+    <HTTPTargetConnection>
+        <URL>https://europe-west1-aiplatform.googleapis.com/v1/projects/cvisco-agentic-demo/locations/europe-west1/publishers/google/models/gemini-2.5-flash:generateContent</URL>
+        <Authentication>
+            <GoogleAccessToken>
+                <Scopes>
+                    <Scope>https://www.googleapis.com/auth/cloud-platform</Scope>
+                </Scopes>
+            </GoogleAccessToken>
+        </Authentication>
+    </HTTPTargetConnection>
+</TargetEndpoint>

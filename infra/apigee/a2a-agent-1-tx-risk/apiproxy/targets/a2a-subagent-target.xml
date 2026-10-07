@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<TargetEndpoint name="a2a-subagent-target">
+    <Description>Cloud Run A2A Sub-Agent Target (agent-1-tx-risk-analytics)</Description>
+    <PreFlow name="PreFlow">
+        <Request/>
+        <Response/>
+    </PreFlow>
+    <HTTPTargetConnection>
+        <URL>https://agentic-fsi-demo-1070899805958.europe-west1.run.app/api/a2a/agent-1</URL>
+    </HTTPTargetConnection>
+</TargetEndpoint>

@@ -1,0 +1,19 @@
+# ==============================================================================
+# Example Terraform Variables — Copy to `terraform.tfvars` and customize
+# ==============================================================================
+project_id               = "your-gcp-project-id"
+region                   = "europe-west1"
+apihub_region            = "us-central1"
+bq_dataset_id            = "agentic_fsi_fraud_demo"
+bq_location              = "US"
+authenticated_user_email = "cviscontino@google.com"
+developer_first_name     = "Cristina"
+developer_last_name      = "Viscontino"
+developer_username       = "cviscontino-ce"
+llm_token_quota_per_min  = 1500
+spike_arrest_rpm         = 15
+gemini_model             = "gemini-2.5-flash"
+model_armor_template_id  = "fsi-agent-armor-strict"
+apigee_env_name          = "agentic-prod"
+apigee_envgroup_name     = "eval-envgroup"
+create_apigee_environment = false

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ServiceCallout async="false" continueOnError="false" enabled="true" name="SC-ModelArmor-InspectSQL">
+    <DisplayName>SC-ModelArmor-InspectSQL</DisplayName>
+    <Request clearPayload="true" variable="modelArmorSqlReq">
+        <Set>
+            <Headers>
+                <Header name="Content-Type">application/json</Header>
+            </Headers>
+            <Payload contentType="application/json">{
+  "userPromptData": {
+    "text": "{mcp.sqlQuery}"
+  }
+}</Payload>
+            <Verb>POST</Verb>
+        </Set>
+        <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+    </Request>
+    <Response>modelArmorSqlResp</Response>
+    <HTTPTargetConnection>
+        <URL>https://modelarmor.europe-west1.rep.googleapis.com/v1/projects/cvisco-agentic-demo/locations/europe-west1/templates/fsi-agent-armor-strict:sanitizeUserPrompt</URL>
+        <Authentication>
+            <GoogleAccessToken>
+                <Scopes>
+                    <Scope>https://www.googleapis.com/auth/cloud-platform</Scope>
+                </Scopes>
+            </GoogleAccessToken>
+        </Authentication>
+    </HTTPTargetConnection>
+</ServiceCallout>

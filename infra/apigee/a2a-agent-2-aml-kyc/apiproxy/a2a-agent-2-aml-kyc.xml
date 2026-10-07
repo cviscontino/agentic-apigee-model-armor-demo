@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<APIProxy revision="1" name="a2a-agent-2-aml-kyc">
+    <DisplayName>A2A Agent 2 — Compliance &amp; AML/KYC Portfolio (Apigee + Model Armor)</DisplayName>
+    <Description>Apigee X + Cloud Model Armor Mediated A2A Sub-Agent Proxy for agent-2-compliance-aml-kyc (/v1/a2a/agent-2)</Description>
+    <BasePaths>/v1/a2a/agent-2</BasePaths>
+    <Policies>
+        <Policy>SA-A2A-SpikeArrest</Policy>
+        <Policy>EV-ExtractA2ATaskPayload</Policy>
+        <Policy>SC-ModelArmor-SanitizeA2AInput</Policy>
+        <Policy>EV-ExtractArmorVerdict</Policy>
+        <Policy>RF-ModelArmorBlockedA2A</Policy>
+        <Policy>SC-ModelArmor-SanitizeA2AOutput</Policy>
+        <Policy>AM-InjectA2AGovernanceHeaders</Policy>
+    </Policies>
+    <ProxyEndpoints>
+        <ProxyEndpoint>default</ProxyEndpoint>
+    </ProxyEndpoints>
+    <TargetEndpoints>
+        <TargetEndpoint>a2a-subagent-target</TargetEndpoint>
+    </TargetEndpoints>
+</APIProxy>

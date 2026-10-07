@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<AssignMessage async="false" continueOnError="false" enabled="true" name="AM-InjectTelemetryHeaders">
+    <DisplayName>AM-InjectTelemetryHeaders</DisplayName>
+    <Set>
+        <Headers>
+            <Header name="Content-Type">application/json</Header>
+            <Header name="X-Apigee-Gateway">agentic-ai-gateway-v1</Header>
+            <Header name="X-Apigee-User-Identity">{extracted.userEmail}</Header>
+            <Header name="X-Apigee-LLMTokenQuota-Allowed">{ratelimit.Q-TokenQuota-Enforce.allowed.count}</Header>
+            <Header name="X-Apigee-LLMTokenQuota-Used">{ratelimit.Q-TokenQuota-Enforce.used.count}</Header>
+            <Header name="X-Apigee-LLMTokenQuota-Available">{ratelimit.Q-TokenQuota-Enforce.available.count}</Header>
+            <Header name="X-Apigee-LLMTokenQuota-Reset">{ratelimit.Q-TokenQuota-Enforce.expiry.time}</Header>
+            <Header name="X-Model-Armor-Template">projects/cvisco-agentic-demo/locations/europe-west1/templates/fsi-agent-armor-strict</Header>
+            <Header name="X-Model-Armor-Input-Verdict">{modelArmor.filterMatchState}</Header>
+            <Header name="X-Gemini-Enterprise-Target">ge-root-orchestrator</Header>
+        </Headers>
+        <Payload contentType="application/json">{
+  "status": "APIGEE_MODEL_ARMOR_APPROVED",
+  "proxy": "agentic-ai-gateway",
+  "environment": "agentic-prod",
+  "userIdentity": "{extracted.userEmail}",
+  "llmTokenQuotaPolicy": "Q-TokenQuota-Enforce (OOTB LLMTokenQuota Pre-Check PASSED)",
+  "modelArmorInputVerdict": "{modelArmor.filterMatchState}",
+  "targetOrchestrator": "ge-root-orchestrator"
+}</Payload>
+        <StatusCode>200</StatusCode>
+    </Set>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</AssignMessage>

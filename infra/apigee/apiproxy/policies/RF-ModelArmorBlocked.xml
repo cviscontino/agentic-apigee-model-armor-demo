@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<RaiseFault async="false" continueOnError="false" enabled="true" name="RF-ModelArmorBlocked">
+    <DisplayName>RF-ModelArmorBlocked</DisplayName>
+    <FaultResponse>
+        <Set>
+            <Headers>
+                <Header name="Content-Type">application/json</Header>
+                <Header name="X-Gateway-Verdict">MODEL_ARMOR_BLOCKED</Header>
+            </Headers>
+            <Payload contentType="application/json">
+                {
+                  "error": "MODEL_ARMOR_POLICY_VIOLATION",
+                  "message": "Blocked by Apigee X &amp; Google Cloud Model Armor (fsi-agent-armor-strict)",
+                  "filterMatchState": "{modelArmor.filterMatchState}"
+                }
+            </Payload>
+            <StatusCode>422</StatusCode>
+            <ReasonPhrase>Unprocessable Entity - Model Armor Blocked</ReasonPhrase>
+        </Set>
+    </FaultResponse>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</RaiseFault>
