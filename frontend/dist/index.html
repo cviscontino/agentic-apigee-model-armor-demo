@@ -182,8 +182,8 @@
       });
       const [userTokenQuota, setUserTokenQuota] = useState({
         policy_type: "LLMTokenQuota (Apigee Out-of-the-Box AI Policy)",
-        enforce_policy: "Q-TokenQuota-Enforce (EnforceOnly=true)",
-        count_policy: "Q-TokenQuota-Count (CountOnly=true)",
+        enforce_policy: "LLMTokenQuota-Enforce (EnforceOnly=true)",
+        count_policy: "LLMTokenQuota-Count (CountOnly=true)",
         shared_counter: "user-gemini-token-counter",
         identifier_ref: "extracted.userEmail",
         identifier_value: "admin@cviscontino.altostrat.com",
@@ -868,26 +868,16 @@
                   </span>
                 </div>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                  <strong>Request PreFlow:</strong> <code className="font-mono">Q-TokenQuota-Enforce (&lt;EnforceOnly&gt;true&lt;/EnforceOnly&gt;)</code> verifica il budget per <code className="font-mono">{userTokenQuota.identifier_value}</code> • <strong>Response Flow:</strong> <code className="font-mono">Q-TokenQuota-Count (&lt;CountOnly&gt;true&lt;/CountOnly&gt;)</code> scala i token reali restituiti da <strong>Vertex AI Gemini</strong>.
+                  <strong>Request PreFlow:</strong> <code className="font-mono">LLMTokenQuota-Enforce (&lt;EnforceOnly&gt;true&lt;/EnforceOnly&gt;)</code> verifica il budget definito su Apigee (<code className="font-mono">&lt;Allow class="{userTokenQuota.identifier_value}" count="1500"/&gt;</code>) • <strong>Response Flow:</strong> <code className="font-mono">LLMTokenQuota-Count (&lt;CountOnly&gt;true&lt;/CountOnly&gt;)</code> scala i token reali restituiti da <strong>Vertex AI Gemini</strong>.
                 </p>
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-900 px-2.5 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800">
-                  <span className="text-[11px] text-zinc-500 font-medium">Limite Token/min:</span>
-                  {[600, 1500, 5000].map((lim) => (
-                    <button
-                      key={lim}
-                      onClick={() => handleUpdateTokenLimitQuick(lim)}
-                      className={`font-mono text-xs px-2 py-0.5 rounded transition-colors ${
-                        Number(userTokenQuota.allowed_tokens) === lim
-                          ? "bg-purple-600 text-white font-bold"
-                          : "hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300"
-                      }`}
-                    >
-                      {lim}
-                    </button>
-                  ))}
+                <div className="flex items-center gap-1.5 bg-zinc-100 dark:bg-zinc-900 px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800">
+                  <span className="text-[11px] text-zinc-500 font-medium">Policy Apigee `&lt;Class&gt;`:</span>
+                  <span className="font-mono text-xs px-2 py-0.5 rounded bg-purple-600 text-white font-bold">
+                    {userTokenQuota.allowed_tokens || 1500} tok/min
+                  </span>
                 </div>
 
                 <button
@@ -1387,8 +1377,9 @@
                           apigee_ootb_policy: {
                             policy_type: "LLMTokenQuota (Out-of-the-Box AI Policy)",
                             shared_name: "user-gemini-token-counter",
-                            request_preflow_step: "Q-TokenQuota-Enforce (EnforceOnly=true)",
-                            response_preflow_step: "Q-TokenQuota-Count (CountOnly=true, jsonPath('$.usageMetadata.totalTokenCount'))",
+                            class_ref: 'extracted.userEmail (<Allow class="admin@cviscontino.altostrat.com" count="1500"/>)',
+                            request_preflow_step: "LLMTokenQuota-Enforce (EnforceOnly=true)",
+                            response_preflow_step: "LLMTokenQuota-Count (CountOnly=true, jsonPath('$.usageMetadata.totalTokenCount'))",
                           },
                           user_token_quota_state: lastTrace.user_token_quota,
                           vertex_ai_gemini_step: lastTrace.gemini_step,
