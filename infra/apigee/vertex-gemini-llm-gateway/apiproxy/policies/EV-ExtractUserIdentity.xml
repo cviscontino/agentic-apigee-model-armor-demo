@@ -2,11 +2,11 @@
 <ExtractVariables async="false" continueOnError="true" enabled="true" name="EV-ExtractUserIdentity">
     <DisplayName>EV-ExtractUserIdentity</DisplayName>
     <Source clearPayload="false">request</Source>
+    <Header name="X-Authenticated-User">
+        <Pattern ignoreCase="true">{userEmail}</Pattern>
+    </Header>
     <QueryParam name="user_email">
         <Pattern ignoreCase="true">{userEmail}</Pattern>
-    </QueryParam>
-    <QueryParam name="token_limit">
-        <Pattern ignoreCase="true">{tokenLimit}</Pattern>
     </QueryParam>
     <JSONPayload>
         <Variable name="userPrompt" type="string">

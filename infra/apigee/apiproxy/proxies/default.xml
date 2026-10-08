@@ -15,7 +15,7 @@
                 <Condition>request.verb == "POST"</Condition>
             </Step>
             <Step>
-                <Name>Q-TokenQuota-Enforce</Name>
+                <Name>LLMTokenQuota-Enforce</Name>
                 <Condition>request.verb == "POST"</Condition>
             </Step>
             <Step>

@@ -103,10 +103,10 @@ def get_user_token_quota_status(user_email: Optional[str] = None) -> Dict[str, A
     )
     return {
         "policy_type": "LLMTokenQuota (Apigee Out-of-the-Box AI Policy)",
-        "enforce_policy": "Q-TokenQuota-Enforce (EnforceOnly=true)",
-        "count_policy": "Q-TokenQuota-Count (CountOnly=true)",
+        "enforce_policy": "LLMTokenQuota-Enforce (EnforceOnly=true)",
+        "count_policy": "LLMTokenQuota-Count (CountOnly=true)",
         "shared_counter": "user-gemini-token-counter",
-        "identifier_ref": "extracted.userEmail",
+        "identifier_ref": "extracted.userEmail (<Class ref=\"extracted.userEmail\">)",
         "identifier_value": target_user,
         "token_usage_source": "$.usageMetadata.totalTokenCount",
         "allowed_tokens": allowed_limit,
@@ -142,22 +142,21 @@ def call_apigee_psc_proxy(
 ) -> Dict[str, Any]:
     """
     Sends a real HTTP request through the Apigee X PSC Runtime Instance (apigee-runtime-euw1 @ 10.10.0.50).
-    - Attaches the real Apigee Developer App Consumer Key (`apikey`), `user_email`, and `token_limit` so
-      `VA-VerifyApiKey`, `EV-ExtractUserIdentity`, `Q-TokenQuota-Enforce`, and `Q-TokenQuota-Count` execute cleanly.
+    - Attaches the real Apigee Developer App Consumer Key (`apikey`) and `user_email` so
+      `VA-VerifyApiKey`, `EV-ExtractUserIdentity`, `LLMTokenQuota-Enforce`, and `LLMTokenQuota-Count` execute cleanly.
     """
     t0 = time.perf_counter()
     base_path = path.split("?")[0]
     api_key = APIGEE_PROXY_CONSUMER_KEYS.get(base_path, "RDKyN3gVOGHVQh5NTrmASbxbbMuLpnaUuFNQ83NUAvOJ1YTy")
-    token_limit = str(GATEWAY_STATE["config"].get("token_quota_per_min", 1500))
     sep = "&" if "?" in path else "?"
-    full_path = f"{path}{sep}apikey={api_key}&user_email={user_email}&token_limit={token_limit}"
+    full_path = f"{path}{sep}apikey={api_key}&user_email={user_email}"
 
     req_headers = {
         "Host": APIGEE_ENVGROUP_HOST,
         "Content-Type": "application/json",
         "X-Apigee-A2A-Hop": "true",
+        "X-Authenticated-User": user_email,
         "X-User-Email": user_email,
-        "X-Apigee-Token-Limit": token_limit,
         "x-api-key": api_key,
         "x-apigee-api-key": api_key,
     }
@@ -1029,7 +1028,7 @@ def call_vertex_ai_gemini_live(
     """
     Invokes Vertex AI Gemini (`gemini-2.5-flash:generateContent`) ALWAYS mediated via the Apigee X Proxy
     `vertex-gemini-llm-gateway` (`https://api.cvisco-agentic-demo.internal/v1/llm/gemini`),
-    which enforces Out-of-the-Box `<LLMTokenQuota>` (`Q-TokenQuota-Enforce` + `Q-TokenQuota-Count`
+    which enforces Out-of-the-Box `<LLMTokenQuota>` (`LLMTokenQuota-Enforce` + `LLMTokenQuota-Count`
     on `$.usageMetadata.totalTokenCount` for `admin@cviscontino.altostrat.com`) and Cloud Model Armor.
     """
     t0 = time.perf_counter()
@@ -1244,7 +1243,7 @@ DEMO_SCENARIOS = [
         "category": "APIGEE_QUOTA_BLOCKED",
         "title": "Superamento Soglia Token Gemini per admin@cviscontino.altostrat.com (Apigee LLMTokenQuota)",
         "badge": "429 QUOTA • LLMTokenQuota OOTB",
-        "description": "Simula l'esaurimento del budget di token/minuto per l'utente admin@cviscontino.altostrat.com sulla policy Out-of-the-Box <LLMTokenQuota> di Apigee X (Q-TokenQuota-Enforce con Identifier=admin@cviscontino.altostrat.com). La richiesta viene bloccata con HTTP 429 prima di invocare Gemini.",
+        "description": "Simula l'esaurimento del budget di token/minuto per l'utente admin@cviscontino.altostrat.com sulla policy Out-of-the-Box <LLMTokenQuota> di Apigee X (LLMTokenQuota-Enforce con Identifier=admin@cviscontino.altostrat.com). La richiesta viene bloccata con HTTP 429 prima di invocare Gemini.",
         "prompt": "Genera un report forense completo su tutte le transazioni internazionali SWIFT e SEPA degli ultimi 12 mesi per tutti i clienti Corporate Treasury.",
         "customer_filter": None,
     },
@@ -1602,7 +1601,7 @@ async def invoke_agentic_gateway(req: GatewayInvokeRequest):
         asyncio.create_task(asyncio.to_thread(emit_cloud_monitoring_telemetry, record))
         return record
 
-    # Check Out-of-the-Box Apigee <LLMTokenQuota name="Q-TokenQuota-Enforce"> (EnforceOnly=true on Identifier=user_email)
+    # Check Out-of-the-Box Apigee <LLMTokenQuota name="LLMTokenQuota-Enforce"> (EnforceOnly=true on Identifier=user_email)
     if req.scenario_id == "apigee_token_quota_exceeded":
         allowed_lim = int(GATEWAY_STATE["config"].get("token_quota_per_min", 1500))
         current_q = get_user_token_quota_status(user_email)
@@ -1634,7 +1633,7 @@ async def invoke_agentic_gateway(req: GatewayInvokeRequest):
             "apigee_trace": {
                 "proxy": "agentic-ai-gateway (/v1/agentic-fsi)",
                 "user_identity": user_email,
-                "policy_triggered": "Q-TokenQuota-Enforce (<LLMTokenQuota> Out-of-the-Box AI Policy)",
+                "policy_triggered": "LLMTokenQuota-Enforce (<LLMTokenQuota> Out-of-the-Box AI Policy)",
                 "shared_counter": "user-gemini-token-counter",
                 "identifier_ref": f"extracted.userEmail ({user_email})",
                 "enforce_only": True,
@@ -1653,14 +1652,14 @@ async def invoke_agentic_gateway(req: GatewayInvokeRequest):
             "a2a_traces": [],
             "model_armor_output": None,
             "response_markdown": (
-                f"### 429 Quota Exceeded — Apigee Out-of-the-Box `<LLMTokenQuota>` (`Q-TokenQuota-Enforce`)\n\n"
+                f"### 429 Quota Exceeded — Apigee Out-of-the-Box `<LLMTokenQuota>` (`LLMTokenQuota-Enforce`)\n\n"
                 f"La richiesta è stata bloccata preventivamente nel **Request PreFlow** di **Apigee X** perché l'utente **`{user_email}`** "
                 f"ha superato il budget di token Vertex AI Gemini assegnato:\n\n"
                 f"- **Utente (`<Identifier ref=\"extracted.userEmail\"/>`)**: `{user_email}`\n"
                 f"- **Contatore Condiviso (`<SharedName>`)**: `user-gemini-token-counter`\n"
                 f"- **Token Consumati nella finestra mobile (60s)**: **`{user_quota_pre['used_tokens']:,}` / `{user_quota_pre['allowed_tokens']:,}` token/min** "
                 f"(`Prompt`: `{user_quota_pre['prompt_tokens_window']:,}` • `Output`: `{user_quota_pre['candidates_tokens_window']:,}`)\n"
-                f"- **Prossimo Reset Automatico (`ratelimit.Q-TokenQuota-Count.expiry.time`)**: tra **`{user_quota_pre['reset_in_seconds']}s`** (`{user_quota_pre['expiry_time_utc']}`)\n"
+                f"- **Prossimo Reset Automatico (`ratelimit.LLMTokenQuota-Count.expiry.time`)**: tra **`{user_quota_pre['reset_in_seconds']}s`** (`{user_quota_pre['expiry_time_utc']}`)\n"
                 f"- **Cost Saving**: Chiamata bloccata **prima** di invocare Cloud Model Armor, Gemini Enterprise, i 2 Agenti A2A, BigQuery MCP e Vertex AI Gemini *(puoi cliccare su **Reset Token Quota** o alzare la soglia nella barra in alto per riprovare)*."
             ),
         }
@@ -1822,7 +1821,7 @@ async def invoke_agentic_gateway(req: GatewayInvokeRequest):
             "api_key_verified": True,
             "client_app": req.client_app,
             "spike_arrest_status": f"PASSED ({current_rpm + 1}/{spike_limit} rpm)",
-            "llm_token_quota_policy": "Q-TokenQuota-Enforce (EnforceOnly) + Q-TokenQuota-Count (CountOnly)",
+            "llm_token_quota_policy": "LLMTokenQuota-Enforce (EnforceOnly) + LLMTokenQuota-Count (CountOnly)",
             "llm_token_quota_identifier": user_email,
             "llm_token_quota_shared_counter": "user-gemini-token-counter",
             "llm_token_quota_source": "$.usageMetadata.totalTokenCount",
@@ -1847,7 +1846,7 @@ async def invoke_agentic_gateway(req: GatewayInvokeRequest):
             "target_endpoint": gemini_res["target_endpoint"],
             "live_vertex_ai": gemini_res["live_vertex_ai"],
             "usageMetadata": usage_meta,
-            "apigee_policy": "Q-TokenQuota-Enforce (EnforceOnly) + Q-TokenQuota-Count (CountOnly)",
+            "apigee_policy": "LLMTokenQuota-Enforce (EnforceOnly) + LLMTokenQuota-Count (CountOnly)",
             "extracted_jsonpath": "$.usageMetadata.totalTokenCount",
             "identifier": user_email,
             "latency_ms": gemini_res["latency_ms"],

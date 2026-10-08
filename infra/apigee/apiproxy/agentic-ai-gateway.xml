@@ -6,8 +6,8 @@
     <Policies>
         <Policy>VA-VerifyApiKey</Policy>
         <Policy>SA-SpikeArrest-Burst</Policy>
-        <Policy>Q-TokenQuota-Enforce</Policy>
-        <Policy>Q-TokenQuota-Count</Policy>
+        <Policy>LLMTokenQuota-Enforce</Policy>
+        <Policy>LLMTokenQuota-Count</Policy>
         <Policy>EV-ExtractUserPrompt</Policy>
         <Policy>SC-ModelArmor-SanitizeInput</Policy>
         <Policy>EV-ExtractModelArmorVerdict</Policy>

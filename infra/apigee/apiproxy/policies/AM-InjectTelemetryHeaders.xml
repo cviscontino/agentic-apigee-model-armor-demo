@@ -6,10 +6,9 @@
             <Header name="Content-Type">application/json</Header>
             <Header name="X-Apigee-Gateway">agentic-ai-gateway-v1</Header>
             <Header name="X-Apigee-User-Identity">{extracted.userEmail}</Header>
-            <Header name="X-Apigee-LLMTokenQuota-Allowed">{ratelimit.Q-TokenQuota-Enforce.allowed.count}</Header>
-            <Header name="X-Apigee-LLMTokenQuota-Used">{ratelimit.Q-TokenQuota-Enforce.used.count}</Header>
-            <Header name="X-Apigee-LLMTokenQuota-Available">{ratelimit.Q-TokenQuota-Enforce.available.count}</Header>
-            <Header name="X-Apigee-LLMTokenQuota-Reset">{ratelimit.Q-TokenQuota-Enforce.expiry.time}</Header>
+            <Header name="X-Apigee-LLMTokenQuota-Allowed">{ratelimit.LLMTokenQuota-Enforce.allowed.count}</Header>
+            <Header name="X-Apigee-LLMTokenQuota-Used">{ratelimit.LLMTokenQuota-Enforce.used.count}</Header>
+            <Header name="X-Apigee-LLMTokenQuota-Available">{ratelimit.LLMTokenQuota-Enforce.available.count}</Header>
             <Header name="X-Model-Armor-Template">projects/cvisco-agentic-demo/locations/europe-west1/templates/fsi-agent-armor-strict</Header>
             <Header name="X-Model-Armor-Input-Verdict">{modelArmor.filterMatchState}</Header>
             <Header name="X-Gemini-Enterprise-Target">ge-root-orchestrator</Header>
@@ -19,7 +18,7 @@
   "proxy": "agentic-ai-gateway",
   "environment": "agentic-prod",
   "userIdentity": "{extracted.userEmail}",
-  "llmTokenQuotaPolicy": "Q-TokenQuota-Enforce (OOTB LLMTokenQuota Pre-Check PASSED)",
+  "llmTokenQuotaPolicy": "LLMTokenQuota-Enforce (OOTB LLMTokenQuota Pre-Check PASSED)",
   "modelArmorInputVerdict": "{modelArmor.filterMatchState}",
   "targetOrchestrator": "ge-root-orchestrator"
 }</Payload>

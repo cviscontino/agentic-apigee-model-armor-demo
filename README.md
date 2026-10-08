@@ -11,11 +11,11 @@ Tutte le comunicazioni tra Client, Agenti A2A, Server MCP BigQuery e modello Ver
 
 | Hop | Flusso | Proxy Apigee X | BasePath | Policy & Sicurezza Attive |
 | :--- | :--- | :--- | :--- | :--- |
-| **Hop 1 (Northbound)** | Client $\rightarrow$ Gemini Enterprise Root Orchestrator | **`agentic-ai-gateway`** | `/v1/agentic-fsi` | `VA-VerifyApiKey` + `SA-SpikeArrest-Burst` + `Q-TokenQuota-Enforce` + `SC-ModelArmor-SanitizeInput/Output` |
+| **Hop 1 (Northbound)** | Client $\rightarrow$ Gemini Enterprise Root Orchestrator | **`agentic-ai-gateway`** | `/v1/agentic-fsi` | `VA-VerifyApiKey` + `SA-SpikeArrest-Burst` + `LLMTokenQuota-Enforce` + `SC-ModelArmor-SanitizeInput/Output` |
 | **Hop 2a (East-West A2A)** | Root Orchestrator $\rightarrow$ Agent 1 (Transaction & Risk) | **`a2a-agent-1-tx-risk`** | `/v1/a2a/agent-1` | `SA-A2A-SpikeArrest` + `SC-ModelArmor-SanitizeA2AInput/Output` + `AM-InjectA2AGovernanceHeaders` |
 | **Hop 2b (East-West A2A)** | Root Orchestrator $\rightarrow$ Agent 2 (Compliance & AML/KYC) | **`a2a-agent-2-aml-kyc`** | `/v1/a2a/agent-2` | `SA-A2A-SpikeArrest` + `SC-ModelArmor-SanitizeA2AInput/Output` + `AM-InjectA2AGovernanceHeaders` |
 | **Hop 3 (Southbound MCP)** | Agent 1 & Agent 2 $\rightarrow$ BigQuery Remote MCP Server | **`bigquery-mcp-gateway`** | `/v1/mcp/bigquery` | `SC-ModelArmor-InspectSQL` + Read-Only SQL (`execute_sql_readonly`) + `apigee-model-armor-sa` OAuth2 |
-| **Hop 4 (Southbound LLM)** | Root Orchestrator $\rightarrow$ Vertex AI Gemini 2.5 Flash | **`vertex-gemini-llm-gateway`** | `/v1/llm/gemini` | Policy OOTB **`<LLMTokenQuota>`** (`Q-TokenQuota-Enforce` + `Q-TokenQuota-Count` su `$.usageMetadata.totalTokenCount`) |
+| **Hop 4 (Southbound LLM)** | Root Orchestrator $\rightarrow$ Vertex AI Gemini 2.5 Flash | **`vertex-gemini-llm-gateway`** | `/v1/llm/gemini` | Policy OOTB **`<LLMTokenQuota>`** (`LLMTokenQuota-Enforce` + `LLMTokenQuota-Count` con `<Class ref="extracted.userEmail"><Allow class="admin@cviscontino.altostrat.com" count="1500"/></Class>`) |
 
 ---
 

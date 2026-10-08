@@ -6,10 +6,10 @@
     <Policies>
         <Policy>VA-VerifyApiKey</Policy>
         <Policy>EV-ExtractUserIdentity</Policy>
-        <Policy>Q-TokenQuota-Enforce</Policy>
+        <Policy>LLMTokenQuota-Enforce</Policy>
         <Policy>SC-ModelArmor-SanitizeInput</Policy>
         <Policy>AM-CleanTargetRequest</Policy>
-        <Policy>Q-TokenQuota-Count</Policy>
+        <Policy>LLMTokenQuota-Count</Policy>
         <Policy>AM-InjectGeminiQuotaHeaders</Policy>
     </Policies>
     <ProxyEndpoints>

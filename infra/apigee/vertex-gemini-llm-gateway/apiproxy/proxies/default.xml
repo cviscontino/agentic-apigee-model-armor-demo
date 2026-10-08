@@ -11,7 +11,7 @@
                 <Name>EV-ExtractUserIdentity</Name>
             </Step>
             <Step>
-                <Name>Q-TokenQuota-Enforce</Name>
+                <Name>LLMTokenQuota-Enforce</Name>
             </Step>
             <Step>
                 <Name>SC-ModelArmor-SanitizeInput</Name>
@@ -19,7 +19,7 @@
         </Request>
         <Response>
             <Step>
-                <Name>Q-TokenQuota-Count</Name>
+                <Name>LLMTokenQuota-Count</Name>
             </Step>
             <Step>
                 <Name>AM-InjectGeminiQuotaHeaders</Name>

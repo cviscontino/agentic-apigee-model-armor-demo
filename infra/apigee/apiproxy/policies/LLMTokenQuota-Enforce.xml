@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<LLMTokenQuota async="false" continueOnError="false" enabled="true" name="LLMTokenQuota-Enforce" type="rollingwindow">
+    <DisplayName>LLMTokenQuota-Enforce (OOTB AI Policy)</DisplayName>
+    <SharedName>user-gemini-token-counter</SharedName>
+    <EnforceOnly>true</EnforceOnly>
+    <LLMModelSource>gemini-2.5-flash</LLMModelSource>
+    <Allow>
+        <Class ref="extracted.userEmail">
+            <Allow class="admin@cviscontino.altostrat.com" count="1500"/>
+            <Allow class="cviscontino@google.com" count="1500"/>
+        </Class>
+    </Allow>
+    <Interval>1</Interval>
+    <TimeUnit>minute</TimeUnit>
+    <Distributed>true</Distributed>
+    <Synchronous>true</Synchronous>
+</LLMTokenQuota>

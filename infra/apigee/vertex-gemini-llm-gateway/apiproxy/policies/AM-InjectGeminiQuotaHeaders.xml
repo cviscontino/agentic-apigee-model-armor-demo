@@ -6,9 +6,9 @@
             <Header name="X-Apigee-Gateway">cvisco-agentic-demo-apigee-x</Header>
             <Header name="X-Apigee-Proxy">vertex-gemini-llm-gateway</Header>
             <Header name="X-Apigee-User-Identity">{extracted.userEmail}</Header>
-            <Header name="X-Apigee-LLMTokenQuota-Allowed">{ratelimit.Q-TokenQuota-Count.allowed.count}</Header>
-            <Header name="X-Apigee-LLMTokenQuota-Used">{ratelimit.Q-TokenQuota-Count.used.count}</Header>
-            <Header name="X-Apigee-LLMTokenQuota-Available">{ratelimit.Q-TokenQuota-Count.available.count}</Header>
+            <Header name="X-Apigee-LLMTokenQuota-Allowed">{ratelimit.LLMTokenQuota-Enforce.allowed.count}</Header>
+            <Header name="X-Apigee-LLMTokenQuota-Used">{ratelimit.LLMTokenQuota-Count.used.count}</Header>
+            <Header name="X-Apigee-LLMTokenQuota-Available">{ratelimit.LLMTokenQuota-Enforce.available.count}</Header>
         </Headers>
     </Set>
     <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
